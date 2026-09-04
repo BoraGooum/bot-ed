@@ -12,10 +12,9 @@ from bs4 import BeautifulSoup
 
 BASE_URL = "https://editioncollector.fr"
 LISTING_URL = f"{BASE_URL}/collectors"
-BONS_PLANS_URL = f"{BASE_URL}/bons-plans"
+URL_ALAN_WAKE = "https://editioncollector.fr/collectors/alan-wake-design-works-deluxe-edition"
 
 SEEN_FILE = Path(__file__).parent / "seen_articles.json"
-SEEN_PROMOS_FILE = Path(__file__).parent / "seen_promos.json"
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
@@ -155,7 +154,7 @@ def parse_article(url: str) -> dict:
     else:
         title = "Article"
 
-    # Extraction puissante de l'image (S3 -> figure -> lazy -> og:image)
+    # Extraction d'image (S3 -> figure -> lazy -> og:image)
     image_url = None
     s3_matches = re.findall(
         r'https://edition-collector-production\.s3\.amazonaws\.com/uploads/image/file/[^\s"\'<>]+',
@@ -193,7 +192,6 @@ def parse_article(url: str) -> dict:
         text = a.get_text(" ", strip=True)
         
         if "/out/" in href or any(m in href.lower() for m in ["lostincult", "amazon", "fnac", "micromania", "leclerc"]):
-            # Nettoyage du nom pour isoler le site sans le prix collé
             clean_name = re.sub(r'\d+[\.,]?\d*\s*[€$£]', '', text).strip()
             if not clean_name:
                 clean_name = "Lien marchand"
@@ -278,16 +276,15 @@ def send_test_message():
         return
 
     now = obtenir_heure_paris()
-    # Notification bruyante (non-silencieuse) pour la confirmation manuelle
+    # Confirmation manuelle (bruyante)
     send_telegram_message(f"✅ • Workflow réussi, bot opérationnel ({now})", None, silent=False)
 
     try:
-        latest_links = get_latest_article_links()
-        if latest_links:
-            last_article = parse_article(latest_links[0])
-            send_telegram_message(format_article_message(last_article), last_article["image"], silent=True)
+        # Forçage sur Alan Wake pour le test
+        last_article = parse_article(URL_ALAN_WAKE)
+        send_telegram_message(format_article_message(last_article), last_article["image"], silent=True)
     except Exception as exc:
-        print(f"⚠️ Impossible d'envoyer l'aperçu : {exc}")
+        print(f"⚠️ Impossible d'envoyer l'aperçu Alan Wake : {exc}")
 
 def main():
     mettre_a_jour_pointeuse()
