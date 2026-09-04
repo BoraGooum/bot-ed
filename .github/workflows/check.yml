@@ -2,8 +2,8 @@ name: Check New Articles
 
 on:
   schedule:
-    - cron: '0 * * * *'  # S'exécute toutes les heures
-  workflow_dispatch:      # Permet le lancement manuel depuis GitHub
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   check:
