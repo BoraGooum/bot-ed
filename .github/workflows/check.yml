@@ -1,39 +1,39 @@
-name: Check EditionCollector new articles
+name: Check New Articles
 
 on:
   schedule:
-    # Toutes les 15 minutes (heure UTC)
-    - cron: "*/15 * * * *"
-  workflow_dispatch: {}  # Permet de lancer le script manuellement depuis GitHub
-
-permissions:
-  contents: write  # Nécessaire pour autoriser le commit sur le dépôt
+    - cron: '0 * * * *'  # S'exécute toutes les heures
+  workflow_dispatch:      # Permet le lancement manuel depuis GitHub
 
 jobs:
   check:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
+      - name: Checkout du dépôt
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Configuration de Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.10'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Installation des dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
 
-      - name: Run check script
+      - name: Exécution du script de vérification
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TRIGGER_EVENT: ${{ github.event_name }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: python check_new_articles.py
 
-      - name: Commit updated seen files
+      - name: Commit et Push des modifications (pointeuse.txt)
         run: |
-          git config user.name "editioncollector-bot"
-          git config user.email "actions@github.com"
-          git add seen_articles.json seen_promos.json 2>/dev/null || true
-          git diff --staged --quiet || (git commit -m "Update seen items [skip ci]" && git push)
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add pointeuse.txt
+          git commit -m "Chore: mise à jour pointeuse [skip ci]" || exit 0
+          git push
