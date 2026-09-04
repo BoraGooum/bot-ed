@@ -13,7 +13,9 @@ import json
 import os
 import re
 import time
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import requests
 from bs4 import BeautifulSoup
@@ -27,6 +29,7 @@ PIRATE_GIF_URL = "https://c.tenor.com/VmUFY5_WKUEAAAAd/tenor.gif"
 
 SEEN_FILE = Path(__file__).parent / "seen_articles.json"
 SEEN_PROMOS_FILE = Path(__file__).parent / "seen_promos.json"
+POINTEUSE_FILE = Path(__file__).parent / "pointeuse.txt"
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
@@ -40,11 +43,16 @@ HEADERS = {
 # Univers du site -> hashtag Telegram
 HASHTAG_MAP = {
     "jeux vidéo": "#JV",
+    "jeu vidéo": "#JV",
     "films/séries": "#Films_Séries",
+    "films": "#Films_Séries",
+    "séries": "#Films_Séries",
     "livres": "#Livres",
+    "livre": "#Livres",
     "musique": "#Musiques",
     "goodies": "#Goodies",
     "figurines": "#Figurines",
+    "figurine": "#Figurines",
     "accessoires": "#Accessoires",
     "jouets": "#Jouets",
     "print": "#Print",
@@ -55,6 +63,15 @@ HASHTAG_MAP = {
 # --------------------------------------------------------------------------
 # Utilitaires communs
 # --------------------------------------------------------------------------
+
+def log_pointeuse():
+    """Écrit une ligne dans pointeuse.txt à chaque exécution du cron."""
+    now_str = datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y à %H:%M")
+    line = f" - Corvée effectuée à : {now_str}\n"
+    with open(POINTEUSE_FILE, "a", encoding="utf-8") as f:
+        f.write(line)
+    print(f"📝 Pointeuse mise à jour : {line.strip()}")
+
 
 def fetch_raw(url: str) -> requests.Response:
     resp = requests.get(url, headers=HEADERS, timeout=20)
@@ -80,17 +97,24 @@ def escape_html(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def build_hashtag(univers: str | None) -> str:
-    if not univers:
-        return ""
-    tag = HASHTAG_MAP.get(univers.strip().lower())
-    if tag:
-        return tag
-    fallback = re.sub(r"[^A-Za-zÀ-ÿ0-9]", "_", univers.strip())
-    return f"#{fallback}"
+def build_hashtag(univers: str | None, title: str = "") -> str:
+    if univers:
+        u_clean = univers.strip().lower()
+        if u_clean in HASHTAG_MAP:
+            return HASHTAG_MAP[u_clean]
+
+    t_clean = title.lower()
+    if any(k in t_clean for k in ["ps5", "xbox", "switch", "pc", "collector", "jeu", "game"]):
+        return "#JV"
+
+    if univers:
+        fallback = re.sub(r"[^A-Za-zÀ-ÿ0-9]", "_", univers.strip())
+        return f"#{fallback}"
+
+    return ""
 
 
-def send_telegram_message(text: str):
+def send_telegram_message(text: str, silent: bool = True):
     """Envoie un message texte simple sur Telegram."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
@@ -100,13 +124,14 @@ def send_telegram_message(text: str):
         "text": text[:4096],
         "parse_mode": "HTML",
         "disable_web_page_preview": True,
+        "disable_notification": silent,
     }
     resp = requests.post(api_url, data=payload, timeout=20)
     if not resp.ok:
         print(f"❌ Erreur Telegram message ({resp.status_code}): {resp.text}")
 
 
-def send_telegram_animation(caption: str, gif_url: str):
+def send_telegram_animation(caption: str, gif_url: str, silent: bool = True):
     """Envoie une animation/GIF avec légende sur Telegram."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
@@ -115,20 +140,20 @@ def send_telegram_animation(caption: str, gif_url: str):
         "chat_id": TELEGRAM_CHAT_ID,
         "caption": caption,
         "animation": gif_url,
+        "disable_notification": silent,
     }
     resp = requests.post(api_url, data=payload, timeout=20)
     if not resp.ok:
         print(f"❌ Erreur Telegram animation ({resp.status_code}): {resp.text}")
 
 
-def send_telegram_media_group(text: str, photo_urls: list[str]):
+def send_telegram_media_group(text: str, photo_urls: list[str], silent: bool = True):
     """Envoie des images sous forme d'album Telegram (max 10) avec secours en photo unique."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️ TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID manquants, message non envoyé :")
         print(text)
         return
 
-    # Nettoyage strict et restriction aux 10 premières photos maximum
     clean_urls = []
     for u in photo_urls:
         if u and u.startswith("http") and not u.startswith("data:"):
@@ -136,14 +161,12 @@ def send_telegram_media_group(text: str, photo_urls: list[str]):
             if cleaned not in clean_urls:
                 clean_urls.append(cleaned)
 
-    clean_urls = clean_urls[:10]  # Limite stricte Telegram de 10 médias
+    clean_urls = clean_urls[:10]
 
-    # Si pas d'image valide, envoi simple
     if not clean_urls:
-        send_telegram_message(text)
+        send_telegram_message(text, silent=silent)
         return
 
-    # Si 1 seule photo
     if len(clean_urls) == 1:
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
         payload = {
@@ -151,12 +174,12 @@ def send_telegram_media_group(text: str, photo_urls: list[str]):
             "caption": text[:1024],
             "parse_mode": "HTML",
             "photo": clean_urls[0],
+            "disable_notification": silent,
         }
         resp = requests.post(api_url, data=payload, timeout=20)
         resp.raise_for_status()
         return
 
-    # Si album photo (2 à 10 photos)
     media = []
     for i, url in enumerate(clean_urls):
         item = {"type": "photo", "media": url}
@@ -169,11 +192,11 @@ def send_telegram_media_group(text: str, photo_urls: list[str]):
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "media": json.dumps(media),
+        "disable_notification": silent,
     }
 
     resp = requests.post(api_url, data=payload, timeout=20)
 
-    # Secours : si Telegram refuse l'album, bascule sur la 1ère photo
     if not resp.ok:
         print(f"⚠️ Album refusé par Telegram ({resp.status_code}). Tentative avec 1 seule photo de secours...")
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
@@ -182,6 +205,7 @@ def send_telegram_media_group(text: str, photo_urls: list[str]):
             "caption": text[:1024],
             "parse_mode": "HTML",
             "photo": clean_urls[0],
+            "disable_notification": silent,
         }
         fallback_resp = requests.post(api_url, data=payload, timeout=20)
         fallback_resp.raise_for_status()
@@ -238,7 +262,7 @@ def parse_article(url: str) -> dict:
         if cleaned not in seen_imgs:
             seen_imgs.add(cleaned)
             images.append(cleaned)
-            if len(images) == 10:  # Extraction limitée à 10 images max
+            if len(images) == 10:
                 break
 
     if not images:
@@ -256,18 +280,28 @@ def parse_article(url: str) -> dict:
         univers = m.group(1).strip()
 
     merchants = []
-    seen_names = set()
-    price_pattern = re.compile(r"^([A-Za-zÀ-ÿ'’\.\s]+?)\s+([\d]+[.,]\d{2})\s*€", re.UNICODE)
+    seen_merchants = set()
+
     for a in soup.find_all("a", href=True):
+        href = a["href"]
         text = a.get_text(" ", strip=True)
-        match = price_pattern.match(text)
-        if not match:
-            continue
-        name = match.group(1).strip()
-        if name.lower() in seen_names:
-            continue
-        seen_names.add(name.lower())
-        merchants.append({"name": name, "price": match.group(2).strip(), "url": a["href"]})
+
+        if any(domain in href for domain in ["amzn.to", "fnac.com", "micromania.fr", "edcol.fr", "cultura.com", "e.leclerc", "auchan.fr", "lacitedesnuages.be"]):
+            price_match = re.search(r"(\d+[\.,]?\d*)\s*€", text)
+            if not price_match:
+                parent = a.parent
+                if parent:
+                    price_match = re.search(r"(\d+[\.,]?\d*)\s*€", parent.get_text())
+
+            price_str = price_match.group(1).replace(",", ".") + "€" if price_match else "Voir site"
+            name = text.split("€")[0].strip() if "€" in text else text.strip()
+            if not name or len(name) > 40:
+                name = "Disponible ici"
+
+            key = f"{name}-{price_str}"
+            if key not in seen_merchants:
+                seen_merchants.add(key)
+                merchants.append({"name": name, "price": price_str, "url": href})
 
     return {
         "url": url,
@@ -288,12 +322,13 @@ def format_article_message(article: dict) -> str:
         lines.append("")
         lines.append("💰 <b>Prix :</b>")
         for m in article["merchants"]:
-            lines.append(f"• <a href=\"{m['url']}\">{escape_html(m['name'])} — {m['price']}€</a>")
+            price_display = m['price'] if m['price'].endswith('€') else f"{m['price']}€"
+            lines.append(f"• <a href=\"{m['url']}\">{escape_html(m['name'])} — {price_display}</a>")
 
     lines.append("")
     lines.append(f"🔗 <a href=\"{article['url']}\">Voir sur Édition Collector</a>")
 
-    hashtag = build_hashtag(article["univers"])
+    hashtag = build_hashtag(article["univers"], article["title"])
     if hashtag:
         lines.append("")
         lines.append(hashtag)
@@ -327,7 +362,7 @@ def check_collectors() -> int:
     for url in reversed(new_links):
         try:
             article = parse_article(url)
-            send_telegram_media_group(format_article_message(article), article["images"])
+            send_telegram_media_group(format_article_message(article), article["images"], silent=True)
             print(f"✅ [collectors] Notifié : {article['title']}")
             count += 1
             time.sleep(1)
@@ -445,7 +480,7 @@ def format_promo_message(promo: dict) -> str:
     lines.append("")
     lines.append(f"🔗 <a href=\"{promo['url']}\">Voir sur Édition Collector</a>")
 
-    hashtag = build_hashtag(promo.get("univers"))
+    hashtag = build_hashtag(promo.get("univers"), promo["title"])
     if hashtag:
         lines.append("")
         lines.append(hashtag)
@@ -481,7 +516,7 @@ def check_bons_plans() -> int:
     for promo in reversed(new_promos):
         try:
             promo["univers"] = get_univers_for_promo(promo["url"])
-            send_telegram_media_group(format_promo_message(promo), promo["images"])
+            send_telegram_media_group(format_promo_message(promo), promo["images"], silent=True)
             print(f"✅ [bons-plans] Notifié : {promo['title']}")
             count += 1
             time.sleep(1)
@@ -501,34 +536,31 @@ def send_test_message():
     if TRIGGER_EVENT != "workflow_dispatch":
         return
 
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
     now = datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y à %H:%M")
-
     print("🔎 Lancement manuel détecté : test sur la fiche Alan Wake...")
 
-    # 1. Message de confirmation d'exécution du workflow
+    # 1. Message de confirmation sonore (silent=False)
     status_msg = f"✅ • Workflow réussi, bot opérationnel ! ({now})"
-    send_telegram_message(status_msg)
+    send_telegram_message(status_msg, silent=False)
 
-    # 2. Envoi de l'aperçu complet de la fiche Alan Wake
+    # 2. Aperçu Alan Wake silencieux par défaut (silent=True)
     try:
         alan_wake_article = parse_article(TEST_ARTICLE_URL)
-        send_telegram_media_group(format_article_message(alan_wake_article), alan_wake_article["images"])
+        send_telegram_media_group(format_article_message(alan_wake_article), alan_wake_article["images"], silent=True)
         print(f"✅ Test envoyé avec succès ({len(alan_wake_article['images'])} visuel(s) Alan Wake).")
     except Exception as exc:  # noqa: BLE001
         print(f"⚠️ Impossible d'envoyer le test Alan Wake : {exc}")
 
 
 def main():
+    log_pointeuse()
     send_test_message()
     new_articles_count = check_collectors()
     new_promos_count = check_bons_plans()
 
-    # Message pirate automatique si le cron tourne et qu'il n'y a aucune nouveauté
     if TRIGGER_EVENT != "workflow_dispatch" and new_articles_count == 0 and new_promos_count == 0:
         if SEEN_FILE.exists() and SEEN_PROMOS_FILE.exists():
-            send_telegram_animation("🏴‍☠️ • Pas de promo en vue moussaillon...", PIRATE_GIF_URL)
+            send_telegram_animation("🏴‍☠️ • Pas de promo en vue moussaillon...", PIRATE_GIF_URL, silent=True)
 
 
 if __name__ == "__main__":
