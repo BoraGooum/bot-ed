@@ -3,7 +3,7 @@
 Bot de veille EditionCollector.fr -> Telegram
 
 Surveille DEUX pages :
-1. /collectors   -> nouvelles fiches   : titre, photos (album), type, prix marchands (liens), lien fiche, hashtag
+1. /collectors   -> nouvelles fiches   : titre, photos (album max 10), type, prix marchands (liens), lien fiche, hashtag
 2. /bons-plans   -> nouvelles promos   : titre, photo, type, prix barré/promo (+lien marchand), lien fiche, hashtag
 
 Compare avec les listes déjà connues (seen_articles.json / seen_promos.json).
@@ -90,6 +90,22 @@ def build_hashtag(univers: str | None) -> str:
     return f"#{fallback}"
 
 
+def send_telegram_message(text: str):
+    """Envoie un message texte simple sur Telegram."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text[:4096],
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }
+    resp = requests.post(api_url, data=payload, timeout=20)
+    if not resp.ok:
+        print(f"❌ Erreur Telegram message ({resp.status_code}): {resp.text}")
+
+
 def send_telegram_animation(caption: str, gif_url: str):
     """Envoie une animation/GIF avec légende sur Telegram."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
@@ -106,31 +122,25 @@ def send_telegram_animation(caption: str, gif_url: str):
 
 
 def send_telegram_media_group(text: str, photo_urls: list[str]):
-    """Envoie des images sous forme d'album Telegram avec secours si Telegram bloque l'album."""
+    """Envoie des images sous forme d'album Telegram (max 10) avec secours en photo unique."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️ TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID manquants, message non envoyé :")
         print(text)
         return
 
-    # Nettoyage strict des URL
+    # Nettoyage strict et restriction aux 10 premières photos maximum
     clean_urls = []
     for u in photo_urls:
         if u and u.startswith("http") and not u.startswith("data:"):
-            clean_urls.append(u.split("&")[0].split('"')[0])
+            cleaned = u.split("&")[0].split('"')[0].split("'")[0]
+            if cleaned not in clean_urls:
+                clean_urls.append(cleaned)
 
-    clean_urls = clean_urls[:10]  # Limite Telegram
+    clean_urls = clean_urls[:10]  # Limite stricte Telegram de 10 médias
 
     # Si pas d'image valide, envoi simple
     if not clean_urls:
-        api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": text[:4096],
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False,
-        }
-        resp = requests.post(api_url, data=payload, timeout=20)
-        resp.raise_for_status()
+        send_telegram_message(text)
         return
 
     # Si 1 seule photo
@@ -146,7 +156,7 @@ def send_telegram_media_group(text: str, photo_urls: list[str]):
         resp.raise_for_status()
         return
 
-    # Si album photo
+    # Si album photo (2 à 10 photos)
     media = []
     for i, url in enumerate(clean_urls):
         item = {"type": "photo", "media": url}
@@ -163,7 +173,7 @@ def send_telegram_media_group(text: str, photo_urls: list[str]):
 
     resp = requests.post(api_url, data=payload, timeout=20)
 
-    # Secours : si Telegram refuse l'album (WEBPAGE_CURL_FAILED), on bascule sur la 1ère photo
+    # Secours : si Telegram refuse l'album, bascule sur la 1ère photo
     if not resp.ok:
         print(f"⚠️ Album refusé par Telegram ({resp.status_code}). Tentative avec 1 seule photo de secours...")
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
@@ -228,6 +238,8 @@ def parse_article(url: str) -> dict:
         if cleaned not in seen_imgs:
             seen_imgs.add(cleaned)
             images.append(cleaned)
+            if len(images) == 10:  # Extraction limitée à 10 images max
+                break
 
     if not images:
         image_tag = soup.find("meta", property="og:image")
@@ -482,7 +494,7 @@ def check_bons_plans() -> int:
 
 
 # --------------------------------------------------------------------------
-# Message de test (lancement manuel uniquement)
+# Test manuel (workflow_dispatch)
 # --------------------------------------------------------------------------
 
 def send_test_message():
@@ -495,9 +507,13 @@ def send_test_message():
 
     print("🔎 Lancement manuel détecté : test sur la fiche Alan Wake...")
 
+    # 1. Message de confirmation d'exécution du workflow
+    status_msg = f"✅ • Workflow réussi, bot opérationnel ! ({now})"
+    send_telegram_message(status_msg)
+
+    # 2. Envoi de l'aperçu complet de la fiche Alan Wake
     try:
         alan_wake_article = parse_article(TEST_ARTICLE_URL)
-        alan_wake_article["title"] = f"🔍 Aperçu test ({now}) — {alan_wake_article['title']}"
         send_telegram_media_group(format_article_message(alan_wake_article), alan_wake_article["images"])
         print(f"✅ Test envoyé avec succès ({len(alan_wake_article['images'])} visuel(s) Alan Wake).")
     except Exception as exc:  # noqa: BLE001
@@ -511,7 +527,6 @@ def main():
 
     # Message pirate automatique si le cron tourne et qu'il n'y a aucune nouveauté
     if TRIGGER_EVENT != "workflow_dispatch" and new_articles_count == 0 and new_promos_count == 0:
-        # On vérifie que ce n'est pas le tout premier lancement (fichiers JSON déjà existants)
         if SEEN_FILE.exists() and SEEN_PROMOS_FILE.exists():
             send_telegram_animation("🏴‍☠️ • Pas de promo en vue moussaillon...", PIRATE_GIF_URL)
 
