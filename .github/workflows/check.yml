@@ -4,10 +4,10 @@ on:
   schedule:
     # Toutes les 15 minutes (heure UTC)
     - cron: "*/15 * * * *"
-  workflow_dispatch: {}  # permet de lancer le script manuellement depuis l'onglet Actions
+  workflow_dispatch: {}  # Permet de lancer le script manuellement depuis GitHub
 
 permissions:
-  contents: write  # nécessaire pour que le workflow commit seen_articles.json
+  contents: write  # Nécessaire pour autoriser le commit sur le dépôt
 
 jobs:
   check:
@@ -35,8 +35,5 @@ jobs:
         run: |
           git config user.name "editioncollector-bot"
           git config user.email "actions@github.com"
-          for f in seen_articles.json seen_promos.json; do
-            [ -f "$f" ] && git add "$f"
-          done
-          git diff --staged --quiet || git commit -m "Update seen items [skip ci]"
-          git push
+          git add seen_articles.json seen_promos.json 2>/dev/null || true
+          git diff --staged --quiet || (git commit -m "Update seen items [skip ci]" && git push)
