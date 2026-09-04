@@ -3,7 +3,7 @@
 Bot de veille EditionCollector.fr -> Telegram
 
 Surveille DEUX pages :
-1. /collectors   -> nouvelles fiches   : titre, photo, type, prix marchands (liens), lien fiche, hashtag
+1. /collectors   -> nouvelles fiches   : titre, photos (album), type, prix marchands (liens), lien fiche, hashtag
 2. /bons-plans   -> nouvelles promos   : titre, photo, type, prix barré/promo (+lien marchand), lien fiche, hashtag
 
 Compare avec les listes déjà connues (seen_articles.json / seen_promos.json).
@@ -27,6 +27,8 @@ from bs4 import BeautifulSoup
 BASE_URL = "https://editioncollector.fr"
 LISTING_URL = f"{BASE_URL}/collectors"
 BONS_PLANS_URL = f"{BASE_URL}/bons-plans"
+TEST_ARTICLE_URL = f"{BASE_URL}/collectors/alan-wake-design-works-deluxe-edition"
+
 SEEN_FILE = Path(__file__).parent / "seen_articles.json"
 SEEN_PROMOS_FILE = Path(__file__).parent / "seen_promos.json"
 
@@ -39,7 +41,7 @@ HEADERS = {
                   "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 }
 
-# Univers du site -> hashtag Telegram (underscore, pas de tiret : le tiret casse les hashtags Telegram)
+# Univers du site -> hashtag Telegram
 HASHTAG_MAP = {
     "jeux vidéo": "#JV",
     "films/séries": "#Films_Séries",
@@ -70,8 +72,6 @@ def fetch(url: str) -> BeautifulSoup:
 
 
 def normalize_href(href: str, prefix: str) -> str | None:
-    """Ramène un href (relatif OU absolu) vers sa forme relative '/prefix/slug',
-    ou None si ça ne correspond pas à une fiche individuelle."""
     href = href.strip()
     href = re.sub(r"^https?://editioncollector\.fr", "", href)
     m = re.match(rf"^/{prefix}/([a-z0-9\-]+)/?$", href)
@@ -94,25 +94,15 @@ def build_hashtag(univers: str | None) -> str:
     return f"#{fallback}"
 
 
-def send_telegram_message(text: str, photo_url: str | None):
+def send_telegram_media_group(text: str, photo_urls: list[str]):
+    """Envoie jusqu'à 10 images sous forme d'album/galerie Telegram."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️ TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID manquants, message non envoyé :")
         print(text)
         return
 
-    # S'assure que l'URL de l'image est bien absolue
-    if photo_url and not photo_url.startswith("http"):
-        photo_url = BASE_URL + (photo_url if photo_url.startswith("/") else "/" + photo_url)
-
-    if photo_url:
-        api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "caption": text[:1024],  # limite Telegram pour les légendes de photo
-            "parse_mode": "HTML",
-            "photo": photo_url,
-        }
-    else:
+    # Si aucune photo trouvée, envoi simple en texte
+    if not photo_urls:
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
@@ -120,6 +110,48 @@ def send_telegram_message(text: str, photo_url: str | None):
             "parse_mode": "HTML",
             "disable_web_page_preview": False,
         }
+        resp = requests.post(api_url, data=payload, timeout=20)
+        if not resp.ok:
+            print(f"❌ Erreur Telegram ({resp.status_code}): {resp.text}")
+        resp.raise_for_status()
+        return
+
+    # Telegram limite les albums à 10 médias max par envoi
+    photo_urls = photo_urls[:10]
+
+    # Si 1 seule photo, on passe par sendPhoto
+    if len(photo_urls) == 1:
+        api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "caption": text[:1024],
+            "parse_mode": "HTML",
+            "photo": photo_urls[0],
+        }
+        resp = requests.post(api_url, data=payload, timeout=20)
+        if not resp.ok:
+            print(f"❌ Erreur Telegram ({resp.status_code}): {resp.text}")
+        resp.raise_for_status()
+        return
+
+    # Si plusieurs photos, on construit l'album
+    media = []
+    for i, url in enumerate(photo_urls):
+        item = {
+            "type": "photo",
+            "media": url,
+        }
+        # Seule la première photo porte la légende de l'album
+        if i == 0:
+            item["caption"] = text[:1024]
+            item["parse_mode"] = "HTML"
+        media.append(item)
+
+    api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMediaGroup"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "media": json.dumps(media),
+    }
 
     resp = requests.post(api_url, data=payload, timeout=20)
     if not resp.ok:
@@ -157,36 +189,36 @@ def get_latest_article_links() -> list[str]:
 
 
 def parse_article(url: str) -> dict:
-    """Extrait titre, image, type (univers) et TOUS les prix marchands d'une fiche."""
+    """Extrait titre, TOUTES les images de l'article, univers et prix marchands."""
     resp = fetch_raw(url)
     soup = BeautifulSoup(resp.text, "html.parser")
 
     title_tag = soup.find("meta", property="og:title")
     title = title_tag["content"].strip() if title_tag else soup.title.get_text(strip=True)
 
-    image_url = None
-
-    # 1. Extraction directe de l'image S3 dans tout le code source
+    # 1. Capture de TOUTES les URL d'images S3 hébergées par le site
     s3_matches = re.findall(
         r'https://edition-collector-production\.s3\.amazonaws\.com/uploads/image/file/[^\s"\'<>]+',
         resp.text,
     )
-    if s3_matches:
-        image_url = s3_matches[0]
 
-    # 2. Fallback via la balise figure
-    if not image_url:
-        figure_img = soup.select_one("figure img")
-        if figure_img:
-            image_url = figure_img.get("data-src") or figure_img.get("src")
+    # Nettoyage et suppression des doublons en conservant l'ordre
+    images = []
+    seen_imgs = set()
+    for img_url in s3_matches:
+        # Nettoie d'éventuels résidus de guillemets/encodage HTML
+        cleaned = img_url.split("&")[0].split('"')[0].split("'")[0]
+        if cleaned not in seen_imgs:
+            seen_imgs.add(cleaned)
+            images.append(cleaned)
 
-    # 3. Fallback via la meta OpenGraph
-    if not image_url or image_url.startswith("data:"):
+    # 2. Fallback via OpenGraph si aucune image S3 n'a été trouvée
+    if not images:
         image_tag = soup.find("meta", property="og:image")
         if image_tag and image_tag.get("content"):
             candidate = image_tag["content"].strip()
             if "logo" not in candidate.lower() and "favicon" not in candidate.lower():
-                image_url = candidate
+                images.append(candidate)
 
     page_text = soup.get_text("\n", strip=True)
 
@@ -195,7 +227,6 @@ def parse_article(url: str) -> dict:
     if m:
         univers = m.group(1).strip()
 
-    # Tous les marchands avec prix, dans l'ordre où ils apparaissent
     merchants = []
     seen_names = set()
     price_pattern = re.compile(r"^([A-Za-zÀ-ÿ'’\.\s]+?)\s+([\d]+[.,]\d{2})\s*€", re.UNICODE)
@@ -213,7 +244,7 @@ def parse_article(url: str) -> dict:
     return {
         "url": url,
         "title": title,
-        "image": image_url,
+        "images": images,
         "univers": univers,
         "merchants": merchants,
     }
@@ -267,8 +298,8 @@ def check_collectors():
     for url in reversed(new_links):  # du plus ancien au plus récent
         try:
             article = parse_article(url)
-            send_telegram_message(format_article_message(article), article["image"])
-            print(f"✅ [collectors] Notifié : {article['title']}")
+            send_telegram_media_group(format_article_message(article), article["images"])
+            print(f"✅ [collectors] Notifié (avec {len(article['images'])} photo(s)) : {article['title']}")
             time.sleep(1)
         except Exception as exc:  # noqa: BLE001
             print(f"❌ [collectors] Erreur sur {url}: {exc}")
@@ -288,7 +319,6 @@ PROMO_PATTERN = re.compile(
 
 
 def get_latest_promos_raw() -> list[dict]:
-    """Récupère titre / remise / prix / marchand / image / url depuis le listing /bons-plans."""
     soup = fetch(BONS_PLANS_URL)
     candidates = [a for a in soup.find_all("a", href=True) if normalize_href(a["href"], "bons-plans")]
     print(f"[bons-plans] {len(candidates)} liens '/bons-plans/...' bruts trouvés sur la page.")
@@ -332,7 +362,7 @@ def get_latest_promos_raw() -> list[dict]:
             "discount": discount,
             "promo_price": promo_price,
             "original_price": original_price,
-            "image": image_url,
+            "images": [image_url] if image_url else [],
             "merchant_name": merchant_name,
             "merchant_url": merchant_url,
         })
@@ -341,8 +371,6 @@ def get_latest_promos_raw() -> list[dict]:
 
 
 def get_univers_for_promo(promo_url: str) -> str | None:
-    """Va chercher le type (univers) sur la fiche promo, ou sur la fiche
-    collector associée si elle y est liée."""
     try:
         soup = fetch(promo_url)
     except Exception:  # noqa: BLE001
@@ -408,7 +436,7 @@ def check_bons_plans():
         return
 
     if not latest_promos:
-        print("[bons-plans] Aucun promo trouvée.")
+        print("[bons-plans] Aucune promo trouvée.")
         return
 
     latest_urls = [p["url"] for p in latest_promos]
@@ -421,7 +449,7 @@ def check_bons_plans():
     for promo in reversed(new_promos):  # du plus ancien au plus récent
         try:
             promo["univers"] = get_univers_for_promo(promo["url"])
-            send_telegram_message(format_promo_message(promo), promo["image"])
+            send_telegram_media_group(format_promo_message(promo), promo["images"])
             print(f"✅ [bons-plans] Notifié : {promo['title']}")
             time.sleep(1)
         except Exception as exc:  # noqa: BLE001
@@ -432,7 +460,7 @@ def check_bons_plans():
 
 
 # --------------------------------------------------------------------------
-# Message de test (lancement manuel uniquement)
+# Message de test (lancement manuel uniquement avec la fiche Alan Wake)
 # --------------------------------------------------------------------------
 
 def send_test_message():
@@ -443,21 +471,15 @@ def send_test_message():
     from zoneinfo import ZoneInfo
     now = datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y à %H:%M")
 
-    # 1. Message de confirmation basique
-    send_telegram_message(f"✅ • Le bot fonctionne (test manuel du {now})", None)
+    print("🔎 Lancement manuel détecté : test sur la fiche Alan Wake...")
 
-    # 2. Envoi d'un aperçu réel du dernier article
     try:
-        latest_links = get_latest_article_links()
-        if latest_links:
-            last_article = parse_article(latest_links[0])
-            last_article["title"] = f"🔍 Aperçu manuel — {last_article['title']}"
-            send_telegram_message(format_article_message(last_article), last_article["image"])
-            print("✅ Message d'aperçu du dernier article envoyé.")
+        alan_wake_article = parse_article(TEST_ARTICLE_URL)
+        alan_wake_article["title"] = f"🔍 Aperçu test ({now}) — {alan_wake_article['title']}"
+        send_telegram_media_group(format_article_message(alan_wake_article), alan_wake_article["images"])
+        print(f"✅ Test envoyé avec succès ({len(alan_wake_article['images'])} visuel(s) Alan Wake).")
     except Exception as exc:  # noqa: BLE001
-        print(f"⚠️ Impossible d'envoyer l'aperçu du dernier article : {exc}")
-
-    print("✅ Message de test envoyé (lancement manuel détecté).")
+        print(f"⚠️ Impossible d'envoyer le test Alan Wake : {exc}")
 
 
 def main():
