@@ -413,10 +413,25 @@ def check_bons_plans():
 def send_test_message():
     if TRIGGER_EVENT != "workflow_dispatch":
         return  # pas de spam sur les runs automatiques toutes les 15 min
+
     from datetime import datetime
     from zoneinfo import ZoneInfo
     now = datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y à %H:%M")
+
+    # 1. Message de confirmation basique
     send_telegram_message(f"✅ • Le bot fonctionne (test manuel du {now})", None)
+
+    # 2. Envoi d'un aperçu réel du dernier article
+    try:
+        latest_links = get_latest_article_links()
+        if latest_links:
+            last_article = parse_article(latest_links[0])
+            last_article["title"] = f"🔍 Aperçu manuel — {last_article['title']}"
+            send_telegram_message(format_article_message(last_article), last_article["image"])
+            print("✅ Message d'aperçu du dernier article envoyé.")
+    except Exception as exc:  # noqa: BLE001
+        print(f"⚠️ Impossible d'envoyer l'aperçu du dernier article : {exc}")
+
     print("✅ Message de test envoyé (lancement manuel détecté).")
 
 
