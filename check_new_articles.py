@@ -1,24 +1,53 @@
+#!/usr/bin/env python3
+import json
 import os
 import re
-import datetime
+import time
+from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
+
 import requests
 from bs4 import BeautifulSoup
 
-# Variables d'environnement GitHub / Telegram
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "cron")
+BASE_URL = "https://editioncollector.fr"
+LISTING_URL = f"{BASE_URL}/collectors"
+BONS_PLANS_URL = f"{BASE_URL}/bons-plans"
 
-URL_COLLECTORS = "https://editioncollector.fr/collectors"
-URL_ALAN_WAKE = "https://editioncollector.fr/collectors/alan-wake-design-works-deluxe-edition"
+SEEN_FILE = Path(__file__).parent / "seen_articles.json"
+SEEN_PROMOS_FILE = Path(__file__).parent / "seen_promos.json"
 
-# 1. Obtenir la date/heure de Paris
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+EVENT_NAME = os.environ.get("GITHUB_EVENT_NAME", os.environ.get("TRIGGER_EVENT", ""))
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+}
+
+HASHTAG_MAP = {
+    "jeux vidéo": "#JV",
+    "films/séries": "#Films_Séries",
+    "livres": "#Livres",
+    "musique": "#Musiques",
+    "goodies": "#Goodies",
+    "figurines": "#Figurines",
+    "accessoires": "#Accessoires",
+    "jouets": "#Jouets",
+    "print": "#Print",
+    "pin's": "#Pins",
+    "artbook": "#Artbook",
+}
+
+# --------------------------------------------------------------------------
+# Utilitaires
+# --------------------------------------------------------------------------
+
 def obtenir_heure_paris():
     fuseau_paris = ZoneInfo("Europe/Paris")
-    return datetime.datetime.now(fuseau_paris).strftime("%d/%m/%Y à %H:%M")
+    return datetime.now(fuseau_paris).strftime("%d/%m/%Y à %H:%M")
 
-# 2. Update pointeuse
 def mettre_a_jour_pointeuse():
     try:
         maintenant = obtenir_heure_paris()
@@ -28,157 +57,242 @@ def mettre_a_jour_pointeuse():
     except Exception as e:
         print(f"Erreur écriture pointeuse : {e}")
 
-# 3. Envoi Telegram
-def envoyer_telegram(caption, image_url):
+def fetch_raw(url: str) -> requests.Response:
+    resp = requests.get(url, headers=HEADERS, timeout=20)
+    resp.raise_for_status()
+    return resp
+
+def fetch(url: str) -> BeautifulSoup:
+    resp = fetch_raw(url)
+    return BeautifulSoup(resp.text, "html.parser")
+
+def normalize_href(href: str, prefix: str) -> str | None:
+    href = href.strip()
+    href = re.sub(r"^https?://editioncollector\.fr", "", href)
+    m = re.match(rf"^/{prefix}/([a-z0-9\-]+)/?$", href)
+    if not m:
+        return None
+    return f"/{prefix}/{m.group(1)}"
+
+def escape_html(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+def build_hashtag(univers: str | None) -> str:
+    if not univers:
+        return "#Collector"
+    tag = HASHTAG_MAP.get(univers.strip().lower())
+    if tag:
+        return tag
+    fallback = re.sub(r"[^A-Za-zÀ-ÿ0-9]", "_", univers.strip())
+    return f"#{fallback}"
+
+def send_telegram_message(text: str, photo_url: str | None, silent: bool = True):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Erreur : TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID absent des Secrets GitHub.")
+        print("⚠️ TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID manquants.")
         return
 
+    if photo_url and not photo_url.startswith("http"):
+        photo_url = BASE_URL + (photo_url if photo_url.startswith("/") else "/" + photo_url)
+
+    if photo_url:
+        api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "caption": text[:1024],
+            "parse_mode": "HTML",
+            "photo": photo_url,
+            "disable_notification": silent
+        }
+    else:
+        api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": text[:4096],
+            "parse_mode": "HTML",
+            "disable_web_page_preview": False,
+            "disable_notification": silent
+        }
+
     try:
-        if image_url:
-            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-            payload = {
-                "chat_id": TELEGRAM_CHAT_ID,
-                "photo": image_url,
-                "caption": caption,
-                "parse_mode": "HTML",
-                "disable_notification": True
-            }
-        else:
-            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-            payload = {
-                "chat_id": TELEGRAM_CHAT_ID,
-                "text": caption,
-                "parse_mode": "HTML",
-                "disable_notification": True
-            }
-            
-        res = requests.post(url, json=payload, timeout=10)
-        res.raise_for_status()
+        resp = requests.post(api_url, data=payload, timeout=20)
+        resp.raise_for_status()
     except Exception as e:
-        print(f"Erreur lors de l'envoi Telegram : {e}")
+        print(f"❌ Erreur Telegram : {e}")
 
-# 4. Parsing propre de l'article
-def parser_article(url):
+def load_seen(path: Path) -> list[str]:
+    if not path.exists():
+        return []
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        res = requests.get(url, headers=headers, timeout=15)
-        if res.status_code != 200:
-            print(f"Échec HTTP ({res.status_code}) pour {url}")
-            return None, None
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
 
-        soup = BeautifulSoup(res.text, "html.parser")
+def save_seen(path: Path, urls: list[str]):
+    path.write_text(json.dumps(urls[:500], ensure_ascii=False, indent=2), encoding="utf-8")
 
-        # Titre
-        titre_elem = soup.find("h1") or soup.find("h2", class_="entry-title")
-        titre = titre_elem.get_text(strip=True) if titre_elem else "Article"
+# --------------------------------------------------------------------------
+# Parsing des articles / collectors
+# --------------------------------------------------------------------------
 
-        content_div = soup.find("div", class_="entry-content") or soup
-        texte_complet = content_div.get_text()
+def get_latest_article_links() -> list[str]:
+    soup = fetch(LISTING_URL)
+    links, seen = [], set()
+    for a in soup.find_all("a", href=True):
+        rel = normalize_href(a["href"], "collectors")
+        if not rel or rel in seen:
+            continue
+        seen.add(rel)
+        links.append(BASE_URL + rel)
+    return links
 
-        # En-tête
-        is_bon_plan = "bons-plans" in url or "bon plan" in titre.lower()
-        header_str = "💸 • <b>Bon plan !</b>" if is_bon_plan else "🆕 • <b>Nouvel Article !</b>"
+def parse_article(url: str) -> dict:
+    resp = fetch_raw(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
 
-        # Type & Hashtag
-        if "artbook" in titre.lower() or "artbook" in texte_complet.lower() or "design works" in titre.lower():
-            type_str, hashtag = "Artbook", "#Artbook"
-        elif "livre" in texte_complet.lower() or "roman" in texte_complet.lower():
-            type_str, hashtag = "Livres", "#Livres"
-        elif any(k in texte_complet.lower() for k in ["ps5", "xbox", "switch", "jeu"]):
-            type_str, hashtag = "Jeux Vidéo", "#JV"
-        else:
-            type_str, hashtag = "Collector", "#Collector"
+    title_tag = soup.find("h1") or soup.find("h2", class_="entry-title") or soup.find("meta", property="og:title")
+    if title_tag:
+        title = title_tag.get_text(strip=True) if hasattr(title_tag, "get_text") else title_tag.get("content", "").strip()
+    else:
+        title = "Article"
 
-        # Traitement des liens marchands
-        dispo_fr, dispo_import = [], []
-        for a in soup.find_all("a", href=True):
-            href = a["href"]
-            texte_bouton = a.get_text(strip=True)
-            
-            if "/out/" in href or any(m in href.lower() for m in ["lostincult", "amazon", "fnac", "micromania", "leclerc"]):
-                # Extraire uniquement le nom du marchand en enlevant le prix s'il est déjà dans le texte du lien
-                nom_marchand = re.sub(r'\d+[\.,]?\d*\s*[€$£]', '', texte_bouton).strip()
-                if not nom_marchand:
-                    nom_marchand = "Lien marchand"
+    # Extraction puissante de l'image (S3 -> figure -> lazy -> og:image)
+    image_url = None
+    s3_matches = re.findall(
+        r'https://edition-collector-production\.s3\.amazonaws\.com/uploads/image/file/[^\s"\'<>]+',
+        resp.text,
+    )
+    if s3_matches:
+        image_url = s3_matches[0]
 
-                parent_txt = a.parent.get_text(strip=True) if a.parent else texte_bouton
-                prix_trouves = re.findall(r'(\d+[\.,]?\d*\s*[€$£])', parent_txt)
+    if not image_url:
+        figure_img = soup.select_one("figure img") or soup.find("img")
+        if figure_img:
+            image_url = figure_img.get("data-lazy-src") or figure_img.get("data-src") or figure_img.get("src")
 
-                if len(prix_trouves) >= 2 and is_bon_plan:
-                    prix_str = f" <s>{prix_trouves[0]}</s> <b>{prix_trouves[1]}</b>"
-                elif len(prix_trouves) >= 1:
-                    prix_str = f" <b>{prix_trouves[0]}</b>"
-                else:
-                    prix_str = ""
+    if not image_url or image_url.startswith("data:"):
+        image_tag = soup.find("meta", property="og:image")
+        if image_tag and image_tag.get("content"):
+            candidate = image_tag["content"].strip()
+            if "logo" not in candidate.lower() and "favicon" not in candidate.lower():
+                image_url = candidate
 
-                lien_html = f'<a href="{href}">{nom_marchand}</a>{prix_str}'
+    page_text = soup.get_text("\n", strip=True)
+    univers = None
+    m = re.search(r"Univers\s*:\s*([^\n]+)", page_text)
+    if m:
+        univers = m.group(1).strip()
+    elif "artbook" in title.lower() or "design works" in title.lower():
+        univers = "Artbook"
 
-                if "lostincult" in href.lower() or "lost in cult" in nom_marchand.lower() or "uk" in href.lower() or "£" in parent_txt:
-                    dispo_import.append(f"- {lien_html}")
-                else:
-                    dispo_fr.append(f"- {lien_html}")
+    # Traitement des marchands (Dispo FR / Import)
+    dispo_fr, dispo_import = [], []
+    seen_names = set()
 
-        dispo_fr_uniques = list(dict.fromkeys(dispo_fr))
-        dispo_import_uniques = list(dict.fromkeys(dispo_import))
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        text = a.get_text(" ", strip=True)
+        
+        if "/out/" in href or any(m in href.lower() for m in ["lostincult", "amazon", "fnac", "micromania", "leclerc"]):
+            # Nettoyage du nom pour isoler le site sans le prix collé
+            clean_name = re.sub(r'\d+[\.,]?\d*\s*[€$£]', '', text).strip()
+            if not clean_name:
+                clean_name = "Lien marchand"
 
-        txt_dispo_fr = "\n".join(dispo_fr_uniques) if dispo_fr_uniques else "- bientôt ?"
-        txt_dispo_import = "\n".join(dispo_import_uniques) if dispo_import_uniques else "- Aucune pour le moment"
+            if clean_name.lower() in seen_names:
+                continue
+            seen_names.add(clean_name.lower())
 
-        # Recherche de la vraie image principale (gestion lazy-loading)
-        premiere_image = None
-        for img in content_div.find_all("img"):
-            src = img.get("data-lazy-src") or img.get("data-src") or img.get("src")
-            if src and "wp-content/uploads" in src and not src.endswith(".svg"):
-                if src.startswith("//"):
-                    src = "https:" + src
-                premiere_image = src
-                break
+            parent_txt = a.parent.get_text(strip=True) if a.parent else text
+            prix_trouves = re.findall(r'(\d+[\.,]?\d*\s*[€$£])', parent_txt)
+            prix_str = f" <b>{prix_trouves[0]}</b>" if prix_trouves else ""
 
-        # Assemblage final
-        message = (
-            f"{header_str}\n\n"
-            f"<b>{titre}</b>\n\n"
-            f"• <b>Type :</b> {type_str}\n\n"
-            f"• <b>Disponibilités France :</b>\n{txt_dispo_fr}\n\n"
-            f"• <b>Disponibilité import :</b>\n{txt_dispo_import}\n\n"
-            f"🔗 <a href=\"{url}\">Voir sur Édition Collector</a>\n\n"
-            f"{hashtag}"
-        )
+            lien_html = f'<a href="{href}">{escape_html(clean_name)}</a>{prix_str}'
 
-        return message, premiere_image
-    except Exception as e:
-        print(f"Erreur lors du parsing : {e}")
-        return None, None
+            if "lostincult" in href.lower() or "uk" in href.lower() or "£" in parent_txt:
+                dispo_import.append(f"- {lien_html}")
+            else:
+                dispo_fr.append(f"- {lien_html}")
 
-# 5. Notification manuelle (priorité normale avec date + heure)
-def envoyer_confirmation_manuelle():
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        return
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    
-    maintenant = obtenir_heure_paris()
-    texte = f"✅ • Workflow réussi, bot opérationnel ({maintenant})"
-    
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": texte,
-        "disable_notification": False  # Notif sonore
+    return {
+        "url": url,
+        "title": title,
+        "image": image_url,
+        "univers": univers,
+        "dispo_fr": dispo_fr,
+        "dispo_import": dispo_import,
     }
+
+def format_article_message(article: dict) -> str:
+    lines = [f"🆕 • <b>{escape_html(article['title'])}</b>", ""]
+    
+    if article["univers"]:
+        lines.append(f"• <b>Type :</b> {escape_html(article['univers'])}\n")
+
+    lines.append("• <b>Disponibilités France :</b>")
+    if article["dispo_fr"]:
+        lines.extend(article["dispo_fr"])
+    else:
+        lines.append("- bientôt ?")
+
+    lines.append("\n• <b>Disponibilité import :</b>")
+    if article["dispo_import"]:
+        lines.extend(article["dispo_import"])
+    else:
+        lines.append("- Aucune pour le moment")
+
+    lines.append("")
+    lines.append(f"🔗 <a href=\"{article['url']}\">Voir sur Édition Collector</a>\n")
+
+    hashtag = build_hashtag(article["univers"])
+    if hashtag:
+        lines.append(hashtag)
+
+    return "\n".join(lines)
+
+def check_collectors():
+    latest_links = get_latest_article_links()
+    seen = load_seen(SEEN_FILE)
+
+    if not seen:
+        save_seen(SEEN_FILE, latest_links)
+        return
+
+    new_links = [url for url in latest_links if url not in seen]
+    for url in reversed(new_links):
+        try:
+            article = parse_article(url)
+            send_telegram_message(format_article_message(article), article["image"], silent=True)
+            time.sleep(1)
+        except Exception as exc:
+            print(f"❌ Error {url}: {exc}")
+
+    updated = latest_links + [u for u in seen if u not in latest_links]
+    save_seen(SEEN_FILE, updated)
+
+# --------------------------------------------------------------------------
+# Notification manuelle (workflow_dispatch)
+# --------------------------------------------------------------------------
+
+def send_test_message():
+    if EVENT_NAME != "workflow_dispatch":
+        return
+
+    now = obtenir_heure_paris()
+    # Notification bruyante (non-silencieuse) pour la confirmation manuelle
+    send_telegram_message(f"✅ • Workflow réussi, bot opérationnel ({now})", None, silent=False)
+
     try:
-        requests.post(url, json=payload, timeout=10)
-    except Exception as e:
-        print(f"Erreur notification : {e}")
+        latest_links = get_latest_article_links()
+        if latest_links:
+            last_article = parse_article(latest_links[0])
+            send_telegram_message(format_article_message(last_article), last_article["image"], silent=True)
+    except Exception as exc:
+        print(f"⚠️ Impossible d'envoyer l'aperçu : {exc}")
+
+def main():
+    mettre_a_jour_pointeuse()
+    send_test_message()
+    check_collectors()
 
 if __name__ == "__main__":
-    mettre_a_jour_pointeuse()
-
-    if EVENT_NAME == "workflow_dispatch":
-        envoyer_confirmation_manuelle()
-        caption, img_url = parser_article(URL_ALAN_WAKE)
-        if caption:
-            envoyer_telegram(caption, img_url)
-    else:
-        caption, img_url = parser_article(URL_COLLECTORS)
-        if caption:
-            envoyer_telegram(caption, img_url)
+    main()
