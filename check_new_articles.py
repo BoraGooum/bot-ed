@@ -58,9 +58,14 @@ HASHTAG_MAP = {
 # Utilitaires communs
 # --------------------------------------------------------------------------
 
-def fetch(url: str) -> BeautifulSoup:
+def fetch_raw(url: str) -> requests.Response:
     resp = requests.get(url, headers=HEADERS, timeout=20)
     resp.raise_for_status()
+    return resp
+
+
+def fetch(url: str) -> BeautifulSoup:
+    resp = fetch_raw(url)
     return BeautifulSoup(resp.text, "html.parser")
 
 
@@ -153,30 +158,35 @@ def get_latest_article_links() -> list[str]:
 
 def parse_article(url: str) -> dict:
     """Extrait titre, image, type (univers) et TOUS les prix marchands d'une fiche."""
-    soup = fetch(url)
+    resp = fetch_raw(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
 
     title_tag = soup.find("meta", property="og:title")
     title = title_tag["content"].strip() if title_tag else soup.title.get_text(strip=True)
 
     image_url = None
 
-    # 1. Tentative via la meta OpenGraph
-    image_tag = soup.find("meta", property="og:image")
-    if image_tag and image_tag.get("content"):
-        candidate = image_tag["content"].strip()
-        if "logo" not in candidate.lower() and "favicon" not in candidate.lower():
-            image_url = candidate
+    # 1. Extraction directe de l'image S3 dans tout le code source
+    s3_matches = re.findall(
+        r'https://edition-collector-production\.s3\.amazonaws\.com/uploads/image/file/[^\s"\'<>]+',
+        resp.text,
+    )
+    if s3_matches:
+        image_url = s3_matches[0]
 
-    # 2. Fallback : recherche spécifique des images hébergées sur Amazon S3 ou uploads
+    # 2. Fallback via la balise figure
     if not image_url:
-        for img in soup.find_all("img"):
-            src = img.get("src") or img.get("data-src")
-            if not src:
-                continue
-            # Filtre strict pour capturer le visuel du produit
-            if "amazonaws.com" in src or "/uploads/image/file/" in src:
-                image_url = src
-                break
+        figure_img = soup.select_one("figure img")
+        if figure_img:
+            image_url = figure_img.get("data-src") or figure_img.get("src")
+
+    # 3. Fallback via la meta OpenGraph
+    if not image_url or image_url.startswith("data:"):
+        image_tag = soup.find("meta", property="og:image")
+        if image_tag and image_tag.get("content"):
+            candidate = image_tag["content"].strip()
+            if "logo" not in candidate.lower() and "favicon" not in candidate.lower():
+                image_url = candidate
 
     page_text = soup.get_text("\n", strip=True)
 
@@ -305,9 +315,10 @@ def get_latest_promos_raw() -> list[dict]:
         image_url = None
         for img_link in soup.find_all("a", href=a["href"]):
             img_tag = img_link.find("img")
-            if img_tag and img_tag.get("src"):
-                image_url = img_tag["src"]
-                break
+            if img_tag:
+                image_url = img_tag.get("src") or img_tag.get("data-src")
+                if image_url and not image_url.startswith("data:"):
+                    break
 
         merchant_name, merchant_url = None, None
         next_link = a.find_next("a", href=True)
@@ -397,7 +408,7 @@ def check_bons_plans():
         return
 
     if not latest_promos:
-        print("[bons-plans] Aucune promo trouvée.")
+        print("[bons-plans] Aucun promo trouvée.")
         return
 
     latest_urls = [p["url"] for p in latest_promos]
