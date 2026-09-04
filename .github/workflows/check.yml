@@ -33,6 +33,7 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
+          TZ: "Europe/Paris"
         run: python check_new_articles.py
 
       - name: Commit et Push des modifications (pointeuse.txt)
