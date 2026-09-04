@@ -97,7 +97,7 @@ def send_telegram_message(text: str, photo_url: str | None):
 
     # S'assure que l'URL de l'image est bien absolue
     if photo_url and not photo_url.startswith("http"):
-        photo_url = BASE_URL + photo_url
+        photo_url = BASE_URL + (photo_url if photo_url.startswith("/") else "/" + photo_url)
 
     if photo_url:
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
@@ -158,21 +158,23 @@ def parse_article(url: str) -> dict:
     title_tag = soup.find("meta", property="og:title")
     title = title_tag["content"].strip() if title_tag else soup.title.get_text(strip=True)
 
-    # 1. Tentative via la meta OpenGraph
     image_url = None
+
+    # 1. Tentative via la meta OpenGraph
     image_tag = soup.find("meta", property="og:image")
     if image_tag and image_tag.get("content"):
         candidate = image_tag["content"].strip()
         if "logo" not in candidate.lower() and "favicon" not in candidate.lower():
             image_url = candidate
 
-    # 2. Fallback : cherche la première vraie image dans la page (notamment AWS S3)
+    # 2. Fallback : recherche spécifique des images hébergées sur Amazon S3 ou uploads
     if not image_url:
         for img in soup.find_all("img"):
             src = img.get("src") or img.get("data-src")
             if not src:
                 continue
-            if "s3.amazonaws.com" in src or "uploads" in src or "collector" in src.lower():
+            # Filtre strict pour capturer le visuel du produit
+            if "amazonaws.com" in src or "/uploads/image/file/" in src:
                 image_url = src
                 break
 
@@ -286,13 +288,12 @@ def get_latest_promos_raw() -> list[dict]:
     for a in candidates:
         rel = normalize_href(a["href"], "bons-plans")
         text = a.get_text(" ", strip=True)
-        # on retire un éventuel badge "NEW"/"MAJ" en tête ou en queue de texte
         text = re.sub(r"^(NEW|MAJ)\s+", "", text)
         text = re.sub(r"\s+(NEW|MAJ)$", "", text)
 
         match = PROMO_PATTERN.search(text)
         if not match:
-            continue  # probablement le lien image (pas de texte) ou un autre lien
+            continue
 
         url = BASE_URL + rel
         if url in seen_urls:
@@ -341,7 +342,6 @@ def get_univers_for_promo(promo_url: str) -> str | None:
     if m:
         return m.group(1).strip()
 
-    # fallback : suit un lien vers la fiche /collectors/... si présent sur la page
     for a in soup.find_all("a", href=True):
         rel = normalize_href(a["href"], "collectors")
         if not rel:
@@ -354,7 +354,7 @@ def get_univers_for_promo(promo_url: str) -> str | None:
         m2 = re.search(r"Univers\s*:\s*([^\n]+)", sub_text)
         if m2:
             return m2.group(1).strip()
-        break  # on ne suit qu'un seul lien collector pour ne pas multiplier les requêtes
+        break
 
     return None
 
@@ -390,7 +390,6 @@ def check_bons_plans():
     seen = load_seen(SEEN_PROMOS_FILE)
     first_run = len(seen) == 0
 
-    # Crée systématiquement le fichier au premier lancement
     if first_run:
         latest_urls = [p["url"] for p in latest_promos] if latest_promos else []
         print(f"[bons-plans] Premier lancement : {len(latest_urls)} promos enregistrées.")
