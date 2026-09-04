@@ -10,11 +10,9 @@ Compare avec les listes déjà connues (seen_articles.json / seen_promos.json).
 Au tout premier lancement de chaque flux, le script enregistre juste l'état
 actuel SANS notifier, pour ne pas spammer avec tout l'historique déjà en ligne.
 
-Un message de test + un aperçu des 2 derniers éléments est envoyé quand le
-workflow est lancé MANUELLEMENT (bouton "Run workflow" sur GitHub).
-
-Les notifications de nouveautés (runs automatiques toutes les 15 min) sont
-envoyées en SILENCIEUX (pas de son/vibration côté Telegram).
+Un message de test est envoyé quand le workflow est lancé MANUELLEMENT
+(bouton "Run workflow" sur GitHub), pour vérifier que tout fonctionne sans
+attendre une vraie nouveauté sur le site.
 """
 
 import json
@@ -91,11 +89,15 @@ def build_hashtag(univers: str | None) -> str:
     return f"#{fallback}"
 
 
-def send_telegram_message(text: str, photo_url: str | None, silent: bool = False):
+def send_telegram_message(text: str, photo_url: str | None):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️ TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID manquants, message non envoyé :")
         print(text)
         return
+
+    # S'assure que l'URL de l'image est bien absolue
+    if photo_url and not photo_url.startswith("http"):
+        photo_url = BASE_URL + photo_url
 
     if photo_url:
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
@@ -104,7 +106,6 @@ def send_telegram_message(text: str, photo_url: str | None, silent: bool = False
             "caption": text[:1024],  # limite Telegram pour les légendes de photo
             "parse_mode": "HTML",
             "photo": photo_url,
-            "disable_notification": silent,
         }
     else:
         api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -113,7 +114,6 @@ def send_telegram_message(text: str, photo_url: str | None, silent: bool = False
             "text": text[:4096],
             "parse_mode": "HTML",
             "disable_web_page_preview": False,
-            "disable_notification": silent,
         }
 
     resp = requests.post(api_url, data=payload, timeout=20)
@@ -218,17 +218,20 @@ def format_article_message(article: dict) -> str:
 def check_collectors():
     latest_links = get_latest_article_links()
     print(f"[collectors] {len(latest_links)} liens trouvés sur la page.")
-    if not latest_links:
-        return
 
     seen = load_seen(SEEN_FILE)
     first_run = len(seen) == 0
-    new_links = [url for url in latest_links if url not in seen]
 
     if first_run:
         print(f"[collectors] Premier lancement : {len(latest_links)} fiches enregistrées, aucune notification envoyée.")
         save_seen(SEEN_FILE, latest_links)
         return
+
+    if not latest_links:
+        print("[collectors] Aucun article trouvé.")
+        return
+
+    new_links = [url for url in latest_links if url not in seen]
 
     if not new_links:
         print("[collectors] Aucun nouvel article.")
@@ -237,7 +240,7 @@ def check_collectors():
     for url in reversed(new_links):  # du plus ancien au plus récent
         try:
             article = parse_article(url)
-            send_telegram_message(format_article_message(article), article["image"], silent=True)
+            send_telegram_message(format_article_message(article), article["image"])
             print(f"✅ [collectors] Notifié : {article['title']}")
             time.sleep(1)
         except Exception as exc:  # noqa: BLE001
@@ -368,18 +371,23 @@ def format_promo_message(promo: dict) -> str:
 def check_bons_plans():
     latest_promos = get_latest_promos_raw()
     print(f"[bons-plans] {len(latest_promos)} promos parsées avec succès.")
+
+    seen = load_seen(SEEN_PROMOS_FILE)
+    first_run = len(seen) == 0
+
+    # Crée systématiquement le fichier au premier lancement
+    if first_run:
+        latest_urls = [p["url"] for p in latest_promos] if latest_promos else []
+        print(f"[bons-plans] Premier lancement : {len(latest_urls)} promos enregistrées.")
+        save_seen(SEEN_PROMOS_FILE, latest_urls)
+        return
+
     if not latest_promos:
+        print("[bons-plans] Aucune promo trouvée.")
         return
 
     latest_urls = [p["url"] for p in latest_promos]
-    seen = load_seen(SEEN_PROMOS_FILE)
-    first_run = len(seen) == 0
     new_promos = [p for p in latest_promos if p["url"] not in seen]
-
-    if first_run:
-        print(f"[bons-plans] Premier lancement : {len(latest_urls)} promos enregistrées, aucune notification envoyée.")
-        save_seen(SEEN_PROMOS_FILE, latest_urls)
-        return
 
     if not new_promos:
         print("[bons-plans] Aucune nouvelle promo.")
@@ -388,7 +396,7 @@ def check_bons_plans():
     for promo in reversed(new_promos):  # du plus ancien au plus récent
         try:
             promo["univers"] = get_univers_for_promo(promo["url"])
-            send_telegram_message(format_promo_message(promo), promo["image"], silent=True)
+            send_telegram_message(format_promo_message(promo), promo["image"])
             print(f"✅ [bons-plans] Notifié : {promo['title']}")
             time.sleep(1)
         except Exception as exc:  # noqa: BLE001
@@ -399,54 +407,21 @@ def check_bons_plans():
 
 
 # --------------------------------------------------------------------------
-# Lancement manuel : message de test + aperçu des 2 derniers éléments
+# Message de test (lancement manuel uniquement)
 # --------------------------------------------------------------------------
 
 def send_test_message():
+    if TRIGGER_EVENT != "workflow_dispatch":
+        return  # pas de spam sur les runs automatiques toutes les 15 min
     from datetime import datetime
     from zoneinfo import ZoneInfo
     now = datetime.now(ZoneInfo("Europe/Paris")).strftime("%d/%m/%Y à %H:%M")
     send_telegram_message(f"✅ • Le bot fonctionne (test manuel du {now})", None)
-    print("✅ Message de test envoyé.")
-
-
-def send_latest_collector_preview():
-    try:
-        latest_links = get_latest_article_links()
-        if not latest_links:
-            print("⚠️ [aperçu] Aucun article /collectors trouvé.")
-            return
-        article = parse_article(latest_links[0])
-        message = "🔍 <i>Aperçu manuel — dernier article publié</i>\n\n" + format_article_message(article)
-        send_telegram_message(message, article["image"])
-        print(f"✅ [aperçu] Dernier collector envoyé : {article['title']}")
-    except Exception as exc:  # noqa: BLE001
-        print(f"❌ [aperçu] Erreur sur le dernier collector : {exc}")
-
-
-def send_latest_bons_plan_preview():
-    try:
-        latest_promos = get_latest_promos_raw()
-        if not latest_promos:
-            print("⚠️ [aperçu] Aucune promo /bons-plans trouvée.")
-            return
-        promo = latest_promos[0]
-        promo["univers"] = get_univers_for_promo(promo["url"])
-        message = "🔍 <i>Aperçu manuel — dernier bon plan publié</i>\n\n" + format_promo_message(promo)
-        send_telegram_message(message, promo["image"])
-        print(f"✅ [aperçu] Dernier bon plan envoyé : {promo['title']}")
-    except Exception as exc:  # noqa: BLE001
-        print(f"❌ [aperçu] Erreur sur le dernier bon plan : {exc}")
+    print("✅ Message de test envoyé (lancement manuel détecté).")
 
 
 def main():
-    is_manual = TRIGGER_EVENT == "workflow_dispatch"
-
-    if is_manual:
-        send_test_message()
-        send_latest_collector_preview()
-        send_latest_bons_plan_preview()
-
+    send_test_message()
     check_collectors()
     check_bons_plans()
 
