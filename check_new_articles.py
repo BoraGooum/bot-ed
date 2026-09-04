@@ -26,6 +26,7 @@ HEADERS = {
 }
 
 HASHTAG_MAP = {
+    "artbook": "#Artbook",
     "jeux vidéo": "#JV",
     "films/séries": "#Films_Séries",
     "livres": "#Livres",
@@ -36,7 +37,6 @@ HASHTAG_MAP = {
     "jouets": "#Jouets",
     "print": "#Print",
     "pin's": "#Pins",
-    "artbook": "#Artbook",
 }
 
 # --------------------------------------------------------------------------
@@ -176,12 +176,13 @@ def parse_article(url: str) -> dict:
                 image_url = candidate
 
     page_text = soup.get_text("\n", strip=True)
-    univers = None
-    m = re.search(r"Univers\s*:\s*([^\n]+)", page_text)
-    if m:
-        univers = m.group(1).strip()
-    elif "artbook" in title.lower() or "design works" in title.lower():
+
+    # Détection du type
+    if "artbook" in title.lower() or "design works" in title.lower() or "artbook" in page_text.lower():
         univers = "Artbook"
+    else:
+        m = re.search(r"Univers\s*:\s*([^\n]+)", page_text)
+        univers = m.group(1).strip() if m else None
 
     # Traitement des marchands (Dispo FR / Import)
     dispo_fr, dispo_import = [], []
@@ -276,11 +277,9 @@ def send_test_message():
         return
 
     now = obtenir_heure_paris()
-    # Confirmation manuelle (bruyante)
     send_telegram_message(f"✅ • Workflow réussi, bot opérationnel ({now})", None, silent=False)
 
     try:
-        # Forçage sur Alan Wake pour le test
         last_article = parse_article(URL_ALAN_WAKE)
         send_telegram_message(format_article_message(last_article), last_article["image"], silent=True)
     except Exception as exc:
