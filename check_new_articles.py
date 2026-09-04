@@ -1,6 +1,7 @@
 import os
 import re
 import datetime
+from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
@@ -12,18 +13,21 @@ EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "cron")
 URL_COLLECTORS = "https://editioncollector.fr/collectors"
 URL_ALAN_WAKE = "https://editioncollector.fr/collectors/alan-wake-design-works-deluxe-edition"
 
+# 1. Pointeuse calée sur l'heure de Paris
 def mettre_a_jour_pointeuse():
     try:
-        maintenant = datetime.datetime.now().strftime("%d/%m/%Y à %H:%M")
+        fuseau_paris = ZoneInfo("Europe/Paris")
+        maintenant = datetime.datetime.now(fuseau_paris).strftime("%d/%m/%Y à %H:%M")
         ligne = f"- Corvée {'manuelle ' if EVENT_NAME == 'workflow_dispatch' else ''}effectuée à : {maintenant}\n"
         with open("pointeuse.txt", "a", encoding="utf-8") as f:
             f.write(ligne)
     except Exception as e:
         print(f"Erreur lors de l'écriture dans la pointeuse : {e}")
 
+# 2. Envoi Telegram (Photo unique ou Album)
 def envoyer_telegram_media(caption, image_urls):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Erreur : TELEGRAM_TOKEN ou TELEGRAM_CHAT_ID non configuré dans les Secrets GitHub.")
+        print("Erreur : TELEGRAM_TOKEN ou TELEGRAM_CHAT_ID absent des Secrets GitHub.")
         return
 
     try:
@@ -72,12 +76,13 @@ def envoyer_telegram_media(caption, image_urls):
     except Exception as e:
         print(f"Erreur lors de l'envoi Telegram : {e}")
 
+# 3. Scraping avec Regex corrigée
 def parser_article(url):
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         res = requests.get(url, headers=headers, timeout=15)
         if res.status_code != 200:
-            print(f"Échec de la requête HTTP (Status Code: {res.status_code})")
+            print(f"Échec HTTP ({res.status_code}) pour {url}")
             return None, []
 
         soup = BeautifulSoup(res.text, "html.parser")
@@ -111,7 +116,7 @@ def parser_article(url):
             t = elem.get_text(strip=True)
             if t.startswith(("-", "•", "–")) or any(keyword in t.lower() for keyword in ["livre", "carte", "poster", "fourreau", "coffret", "artbook", "boîte", "jaquette", "serviette", "manuscrit", "polaroid"]):
                 if 3 < len(t) < 180 and not t.lower().startswith("disponibilités"):
-                    clean_t = re.sub(r'^[•–-\s]+', '', t)
+                    clean_t = re.sub(r'^[•–\-\s]+', '', t)
                     if clean_t not in contenu_list:
                         contenu_list.append(f"- {clean_t}")
 
@@ -181,7 +186,7 @@ def envoyer_confirmation_manuelle():
     try:
         requests.post(url, json=payload, timeout=10)
     except Exception as e:
-        print(f"Erreur envoi notification de confirmation : {e}")
+        print(f"Erreur notification : {e}")
 
 if __name__ == "__main__":
     mettre_a_jour_pointeuse()
