@@ -50,7 +50,11 @@ def obtenir_heure_paris():
 def mettre_a_jour_pointeuse():
     try:
         maintenant = obtenir_heure_paris()
-        ligne = f"- Corvée {'manuelle ' if EVENT_NAME == 'workflow_dispatch' else ''}effectuée à : {maintenant}\n"
+        if EVENT_NAME == "workflow_dispatch":
+            ligne = f"- Workflow manuel : {maintenant}\n"
+        else:
+            ligne = f"- Cron (Auto) : {maintenant}\n"
+
         with open("pointeuse.txt", "a", encoding="utf-8") as f:
             f.write(ligne)
     except Exception as e:
@@ -252,12 +256,10 @@ def check_collectors():
     latest_links = get_latest_article_links()
     seen = load_seen(SEEN_FILE)
 
-    # Initialisation si le fichier est vide
     if not seen:
         save_seen(SEEN_FILE, latest_links)
         return
 
-    # Récupération de TOUS les nouveaux articles non vus, du plus ancien au plus récent
     new_links = [url for url in latest_links if url not in seen]
     for url in reversed(new_links):
         try:
@@ -267,7 +269,6 @@ def check_collectors():
         except Exception as exc:
             print(f"❌ Error {url}: {exc}")
 
-    # Sauvegarde de la liste mise à jour pour ne pas les retraiter
     updated = latest_links + [u for u in seen if u not in latest_links]
     save_seen(SEEN_FILE, updated)
 
