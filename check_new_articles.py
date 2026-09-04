@@ -5,8 +5,8 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
-# Variables d'environnement GitHub / Telegram
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+# Variables d'environnement GitHub / Telegram (avec tes noms exacts)
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "cron")
 
@@ -27,7 +27,7 @@ def mettre_a_jour_pointeuse():
 # 2. Envoi Telegram (Photo unique ou Album)
 def envoyer_telegram_media(caption, image_urls):
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Erreur : TELEGRAM_TOKEN ou TELEGRAM_CHAT_ID absent des Secrets GitHub.")
+        print("Erreur : TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID absent des Secrets GitHub.")
         return
 
     try:
