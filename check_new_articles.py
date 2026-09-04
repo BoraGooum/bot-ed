@@ -158,8 +158,23 @@ def parse_article(url: str) -> dict:
     title_tag = soup.find("meta", property="og:title")
     title = title_tag["content"].strip() if title_tag else soup.title.get_text(strip=True)
 
+    # 1. Tentative via la meta OpenGraph
+    image_url = None
     image_tag = soup.find("meta", property="og:image")
-    image_url = image_tag["content"].strip() if image_tag else None
+    if image_tag and image_tag.get("content"):
+        candidate = image_tag["content"].strip()
+        if "logo" not in candidate.lower() and "favicon" not in candidate.lower():
+            image_url = candidate
+
+    # 2. Fallback : cherche la première vraie image dans la page (notamment AWS S3)
+    if not image_url:
+        for img in soup.find_all("img"):
+            src = img.get("src") or img.get("data-src")
+            if not src:
+                continue
+            if "s3.amazonaws.com" in src or "uploads" in src or "collector" in src.lower():
+                image_url = src
+                break
 
     page_text = soup.get_text("\n", strip=True)
 
