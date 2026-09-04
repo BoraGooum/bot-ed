@@ -5,8 +5,8 @@ from zoneinfo import ZoneInfo
 import requests
 from bs4 import BeautifulSoup
 
-# Variables d'environnement GitHub / Telegram (avec tes noms exacts)
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# Variables d'environnement GitHub / Telegram
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 EVENT_NAME = os.getenv("GITHUB_EVENT_NAME", "cron")
 
@@ -24,75 +24,59 @@ def mettre_a_jour_pointeuse():
     except Exception as e:
         print(f"Erreur lors de l'écriture dans la pointeuse : {e}")
 
-# 2. Envoi Telegram (Photo unique ou Album)
-def envoyer_telegram_media(caption, image_urls):
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+# 2. Envoi Telegram avec uniquement la première image
+def envoyer_telegram(caption, image_url):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("Erreur : TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID absent des Secrets GitHub.")
         return
 
     try:
-        if not image_urls:
-            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        if image_url:
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+            payload = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "photo": image_url,
+                "caption": caption,
+                "parse_mode": "HTML",
+                "disable_notification": True
+            }
+        else:
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
             payload = {
                 "chat_id": TELEGRAM_CHAT_ID,
                 "text": caption,
                 "parse_mode": "HTML",
                 "disable_notification": True
             }
-            res = requests.post(url, json=payload, timeout=10)
-            res.raise_for_status()
-            return
-
-        image_urls = [u for u in image_urls if isinstance(u, str) and u.startswith("http")][:10]
-
-        if len(image_urls) == 1:
-            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
-            payload = {
-                "chat_id": TELEGRAM_CHAT_ID,
-                "photo": image_urls[0],
-                "caption": caption,
-                "parse_mode": "HTML",
-                "disable_notification": True
-            }
-            res = requests.post(url, json=payload, timeout=10)
-            res.raise_for_status()
-        else:
-            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMediaGroup"
-            media = []
-            for i, img in enumerate(image_urls):
-                item = {"type": "photo", "media": img}
-                if i == 0:
-                    item["caption"] = caption
-                    item["parse_mode"] = "HTML"
-                media.append(item)
             
-            payload = {
-                "chat_id": TELEGRAM_CHAT_ID,
-                "media": media,
-                "disable_notification": True
-            }
-            res = requests.post(url, json=payload, timeout=10)
-            res.raise_for_status()
+        res = requests.post(url, json=payload, timeout=10)
+        res.raise_for_status()
     except Exception as e:
         print(f"Erreur lors de l'envoi Telegram : {e}")
 
-# 3. Scraping avec Regex corrigée
+# 3. Scraping et mise en forme du message
 def parser_article(url):
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         res = requests.get(url, headers=headers, timeout=15)
         if res.status_code != 200:
             print(f"Échec HTTP ({res.status_code}) pour {url}")
-            return None, []
+            return None, None
 
         soup = BeautifulSoup(res.text, "html.parser")
 
+        # Titre
         titre_elem = soup.find("h1") or soup.find("h2", class_="entry-title")
         titre = titre_elem.get_text(strip=True) if titre_elem else "Article"
 
         content_div = soup.find("div", class_="entry-content") or soup
         texte_complet = content_div.get_text()
 
+        # En-tête : Bon plan ou Nouvel Article
+        is_bon_plan = "bons-plans" in url or "bon plan" in titre.lower()
+        header_str = "💸 • <b>Bon plan !</b>" if is_bon_plan else "🆕 • <b>Nouvel Article !</b>"
+
+        # Type & Hashtag
         if "artbook" in titre.lower() or "artbook" in texte_complet.lower() or "design works" in titre.lower():
             type_str, hashtag = "Artbook", "#Artbook"
         elif "livre" in texte_complet.lower() or "roman" in texte_complet.lower():
@@ -102,26 +86,7 @@ def parser_article(url):
         else:
             type_str, hashtag = "Collector", "#Collector"
 
-        langue = "Anglais"
-        if "français" in texte_complet.lower() and "anglais" not in texte_complet.lower():
-            langue = "Français"
-
-        relie = "? pages / couverture rigide"
-        match_pages = re.search(r'(\d+\s*pages)', texte_complet, re.IGNORECASE)
-        if match_pages:
-            relie = f"{match_pages.group(1)} / couverture rigide"
-
-        contenu_list = []
-        for elem in content_div.find_all(["li", "p"]):
-            t = elem.get_text(strip=True)
-            if t.startswith(("-", "•", "–")) or any(keyword in t.lower() for keyword in ["livre", "carte", "poster", "fourreau", "coffret", "artbook", "boîte", "jaquette", "serviette", "manuscrit", "polaroid"]):
-                if 3 < len(t) < 180 and not t.lower().startswith("disponibilités"):
-                    clean_t = re.sub(r'^[•–\-\s]+', '', t)
-                    if clean_t not in contenu_list:
-                        contenu_list.append(f"- {clean_t}")
-
-        contenu_str = "\n".join(contenu_list) if contenu_list else "- Détails à venir dans la description."
-
+        # Traitement des marchands et des prix (avec prix barré pour les bons plans)
         dispo_fr, dispo_import = [], []
         for a in soup.find_all("a", href=True):
             href = a["href"]
@@ -130,8 +95,15 @@ def parser_article(url):
             if "/out/" in href or any(m in href.lower() for m in ["lostincult", "amazon", "fnac", "micromania", "leclerc"]):
                 nom_marchand = texte_bouton if texte_bouton else "Lien marchand"
                 parent_txt = a.parent.get_text(strip=True) if a.parent else ""
-                prix_match = re.search(r'(\d+[\.,]?\d*\s*[€$£])', parent_txt)
-                prix_str = f" {prix_match.group(1)}" if prix_match else ""
+                
+                prix_trouves = re.findall(r'(\d+[\.,]?\d*\s*[€$£])', parent_txt)
+                
+                if len(prix_trouves) >= 2 and is_bon_plan:
+                    prix_str = f" <s>{prix_trouves[0]}</s> <b>{prix_trouves[1]}</b>"
+                elif len(prix_trouves) == 1:
+                    prix_str = f" <b>{prix_trouves[0]}</b>"
+                else:
+                    prix_str = ""
 
                 lien_html = f'<a href="{href}">{nom_marchand}</a>{prix_str}'
 
@@ -146,38 +118,36 @@ def parser_article(url):
         txt_dispo_fr = "\n".join(dispo_fr_uniques) if dispo_fr_uniques else "- bientôt ?"
         txt_dispo_import = "\n".join(dispo_import_uniques) if dispo_import_uniques else "- Aucune pour le moment"
 
-        images = []
+        # Image principale (la première uniquement)
+        premiere_image = None
         for img in content_div.find_all("img"):
             src = img.get("src") or img.get("data-src")
             if src and "wp-content/uploads" in src and not src.endswith(".svg"):
                 if src.startswith("//"):
                     src = "https:" + src
-                images.append(src)
-        
-        images_uniques = list(dict.fromkeys(images))
+                premiere_image = src
+                break
 
+        # Assemblage du message
         message = (
-            f"🆕 • <b>Nouvel Article !</b>\n\n"
-            f"<b>{titre}</b>\n"
-            f"<b>Type :</b> {type_str}\n\n"
+            f"{header_str}\n\n"
+            f"<b>{titre}</b>\n\n"
+            f"• <b>Type :</b> {type_str}\n\n"
+            f"• <b>Disponibilités France :</b>\n{txt_dispo_fr}\n\n"
+            f"• <b>Disponibilité import :</b>\n{txt_dispo_import}\n\n"
             f"🔗 <a href=\"{url}\">Voir sur Édition Collector</a>\n\n"
-            f"{hashtag}\n\n"
-            f"<b>Langue :</b> {langue}\n"
-            f"<b>Relié :</b> {relie}\n\n"
-            f"<b>Contenu :</b>\n{contenu_str}\n\n"
-            f"<b>Disponibilités France :</b>\n{txt_dispo_fr}\n\n"
-            f"<b>Disponibilité import :</b>\n{txt_dispo_import}"
+            f"{hashtag}"
         )
 
-        return message, images_uniques
+        return message, premiere_image
     except Exception as e:
         print(f"Erreur lors du parsing de l'article : {e}")
-        return None, []
+        return None, None
 
 def envoyer_confirmation_manuelle():
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": "✅ • Workflow réussi !",
@@ -193,10 +163,10 @@ if __name__ == "__main__":
 
     if EVENT_NAME == "workflow_dispatch":
         envoyer_confirmation_manuelle()
-        caption, imgs = parser_article(URL_ALAN_WAKE)
+        caption, img_url = parser_article(URL_ALAN_WAKE)
         if caption:
-            envoyer_telegram_media(caption, imgs)
+            envoyer_telegram(caption, img_url)
     else:
-        caption, imgs = parser_article(URL_COLLECTORS)
+        caption, img_url = parser_article(URL_COLLECTORS)
         if caption:
-            envoyer_telegram_media(caption, imgs)
+            envoyer_telegram(caption, img_url)
