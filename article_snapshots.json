@@ -354,5 +354,18 @@
       "Square Enix Store|109,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/clair-obscur-expedition-33-bande-originale-vinyle": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Amazon|128,99€",
+      "Cultura|115,99€",
+      "Fnac|115,99€",
+      "Leclerc|115,99€"
+    ],
+    "dispo_import": [
+      "Amazon.be|115,99€",
+      "Fnac.be|115,99€"
+    ]
   }
 }
