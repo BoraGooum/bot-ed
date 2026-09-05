@@ -1,9 +1,13 @@
 name: Check New Articles
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch: {}
+
+# Empêche deux runs de tourner en même temps (protection anti-doublons si
+# cron-job.org et un lancement manuel se chevauchent, ou en cas de retry).
+concurrency:
+  group: check-new-articles
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -37,7 +41,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          for f in seen_articles.json seen_promos.json pointeuse.txt; do
+          git pull --rebase --autostash || true
+          for f in seen_articles.json seen_promos.json pointeuse.txt heartbeat_state.json article_snapshots.json; do
             [ -f "$f" ] && git add "$f"
           done
           git diff --staged --quiet || git commit -m "chore: update tracking files [skip ci]"
