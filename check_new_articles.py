@@ -217,8 +217,47 @@ def get_latest_article_links() -> list[str]:
     return links
 
 
+MERCHANT_KEYWORDS = ["amazon", "fnac", "micromania", "leclerc", "cultura", "cdiscount",
+                      "carrefour", "auchan", "lostincult"]
+
+
+def detect_merchants(soup: BeautifulSoup) -> tuple[list[dict], list[dict]]:
+    """Repère les liens marchands sur une fiche et les répartit en
+    Disponibilités France / Disponibilité import (£, lostincult, .uk...)."""
+    dispo_fr, dispo_import = [], []
+    seen_names = set()
+
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        text = a.get_text(" ", strip=True)
+
+        is_merchant_link = "/out/" in href or any(k in href.lower() for k in MERCHANT_KEYWORDS)
+        if not is_merchant_link:
+            continue
+
+        clean_name = re.sub(r"[\d]+[.,]?\d*\s*[€$£]", "", text).strip()
+        if not clean_name:
+            clean_name = "Lien marchand"
+        dedup_key = clean_name.lower()
+        if dedup_key in seen_names:
+            continue
+        seen_names.add(dedup_key)
+
+        price_match = re.search(r"([\d]+[.,]?\d*\s*[€$£])", text)
+        if not price_match and a.parent:
+            price_match = re.search(r"([\d]+[.,]?\d*\s*[€$£])", a.parent.get_text(" ", strip=True))
+        price = price_match.group(1).replace(" ", "") if price_match else None
+
+        entry = {"name": clean_name, "url": href, "price": price}
+
+        is_import = "lostincult" in href.lower() or "/uk/" in href.lower() or (price and "£" in price)
+        (dispo_import if is_import else dispo_fr).append(entry)
+
+    return dispo_fr, dispo_import
+
+
 def parse_article(url: str) -> dict:
-    """Extrait titre, image, type (univers) et TOUS les prix marchands d'une fiche."""
+    """Extrait titre, image, type (univers) et disponibilités FR/import d'une fiche."""
     resp = requests.get(url, headers=HEADERS, timeout=20)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -229,45 +268,57 @@ def parse_article(url: str) -> dict:
     image_url = extract_image(soup, resp.text)
 
     page_text = soup.get_text("\n", strip=True)
-
     univers = extract_category(page_text)
 
-    # Tous les marchands avec prix, dans l'ordre où ils apparaissent
-    merchants = []
-    seen_names = set()
-    price_pattern = re.compile(r"^([A-Za-zÀ-ÿ'’\.\s]+?)\s+([\d]+[.,]\d{2})\s*€", re.UNICODE)
-    for a in soup.find_all("a", href=True):
-        text = a.get_text(" ", strip=True)
-        match = price_pattern.match(text)
-        if not match:
-            continue
-        name = match.group(1).strip()
-        if name.lower() in seen_names:
-            continue
-        seen_names.add(name.lower())
-        merchants.append({"name": name, "price": match.group(2).strip(), "url": a["href"]})
+    dispo_fr, dispo_import = detect_merchants(soup)
+
+    prices = []
+    for entry in dispo_fr + dispo_import:
+        if entry["price"] and entry["price"] not in prices:
+            prices.append(entry["price"])
 
     return {
         "url": url,
         "title": title,
         "image": image_url,
         "univers": univers,
-        "merchants": merchants,
+        "dispo_fr": dispo_fr,
+        "dispo_import": dispo_import,
+        "prices": prices,
     }
+
+
+def format_merchant_line(entry: dict) -> str:
+    link = f'<a href="{entry["url"]}">{escape_html(entry["name"])}</a>'
+    return f"- {link} {entry['price']}" if entry["price"] else f"- {link}"
 
 
 def format_article_message(article: dict) -> str:
     lines = [f"🆕 • <b>{escape_html(article['title'])}</b>", ""]
+
     if article["univers"]:
-        lines.append(f"Type : {escape_html(article['univers'])}")
-
-    if article["merchants"]:
+        lines.append(f"• Type : {escape_html(article['univers'])}")
         lines.append("")
-        lines.append("💰 <b>Prix :</b>")
-        for m in article["merchants"]:
-            lines.append(f"• <a href=\"{m['url']}\">{escape_html(m['name'])} — {m['price']}€</a>")
 
+    lines.append("• Disponibilités France :")
+    if article["dispo_fr"]:
+        lines.extend(format_merchant_line(e) for e in article["dispo_fr"])
+    else:
+        lines.append("- bientôt ?")
     lines.append("")
+
+    lines.append("• Disponibilité import :")
+    if article["dispo_import"]:
+        lines.extend(format_merchant_line(e) for e in article["dispo_import"])
+    else:
+        lines.append("- Aucune pour le moment")
+    lines.append("")
+
+    if article["prices"]:
+        lines.append("• Prix :")
+        lines.extend(f"- {p}" for p in article["prices"])
+        lines.append("")
+
     lines.append(f"🔗 <a href=\"{article['url']}\">Voir sur Édition Collector</a>")
 
     hashtag = build_hashtag(article["univers"])
