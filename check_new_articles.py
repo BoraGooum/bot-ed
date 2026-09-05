@@ -3,22 +3,28 @@
 Bot de veille EditionCollector.fr -> Telegram
 
 Surveille DEUX pages :
-1. /collectors   -> nouvelles fiches   : titre, photo, type, prix marchands (liens), lien fiche, hashtag
+1. /collectors   -> nouvelles fiches   : titre, photo, type, disponibilités marchands (liens), lien fiche, hashtag
 2. /bons-plans   -> nouvelles promos   : titre, photo, type, prix barré/promo (+lien marchand), lien fiche, hashtag
 
 Compare avec les listes déjà connues (seen_articles.json / seen_promos.json).
 Au tout premier lancement de chaque flux, le script enregistre juste l'état
-actuel SANS notifier, pour ne pas spammer avec tout l'historique déjà en ligne.
+actuel SANS notifier, pour ne pas spammer avec tout l'historique déjà en
+ligne.
 
-Un message de test + un aperçu des 2 derniers éléments (le vrai dernier
-article et la vraie dernière promo, récupérés en direct) est envoyé quand le
-workflow est lancé MANUELLEMENT (bouton "Run workflow" sur GitHub).
+Toutes les notifications de nouveautés sont envoyées en SILENCIEUX (pas de
+son/vibration côté Telegram).
 
-Les notifications de nouveautés (runs automatiques toutes les 15 min) sont
-envoyées en SILENCIEUX (pas de son/vibration côté Telegram).
+Quand un cycle ne trouve AUCUNE nouveauté (ni article ni bon plan), un GIF
+"rien de neuf" est envoyé — en remplaçant le précédent GIF du même type
+(l'ancien message est supprimé avant l'envoi du nouveau, pour qu'un seul GIF
+de ce type existe à la fois dans la discussion).
 
-Une ligne est ajoutée à pointeuse.txt à chaque exécution (manuelle ou cron),
-utile pour vérifier que le workflow se déclenche bien régulièrement.
+Les RECENT_UPDATES_CHECK derniers articles connus sont revisités à chaque
+cycle pour détecter un changement de prix/marchand ; si un changement est
+détecté, une notification "mise à jour" est renvoyée.
+
+Une ligne est ajoutée à pointeuse.txt à chaque exécution, utile pour
+vérifier que le workflow se déclenche bien régulièrement.
 """
 
 import json
@@ -35,11 +41,17 @@ from bs4 import BeautifulSoup
 BASE_URL = "https://editioncollector.fr"
 LISTING_URL = f"{BASE_URL}/collectors"
 BONS_PLANS_URL = f"{BASE_URL}/bons-plans"
-ALAN_WAKE_URL = f"{BASE_URL}/collectors/alan-wake-design-works-deluxe-edition"
 
 SEEN_FILE = Path(__file__).parent / "seen_articles.json"
 SEEN_PROMOS_FILE = Path(__file__).parent / "seen_promos.json"
+SNAPSHOTS_FILE = Path(__file__).parent / "article_snapshots.json"
 POINTEUSE_FILE = Path(__file__).parent / "pointeuse.txt"
+HEARTBEAT_STATE_FILE = Path(__file__).parent / "heartbeat_state.json"
+
+RECENT_UPDATES_CHECK = 40  # nombre de derniers articles revérifiés à chaque cycle pour détecter une mise à jour
+
+HEARTBEAT_GIF_URL = "https://c.tenor.com/VmUFY5_WKUEAAAAd/tenor.gif"
+HEARTBEAT_CAPTION = "🏴‍☠️ • Pas de promo en vue moussaillon..."
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
@@ -177,6 +189,76 @@ def save_seen(path: Path, urls: list[str]):
     path.write_text(json.dumps(urls[:500], ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+# --------------------------------------------------------------------------
+# GIF "rien de neuf" — un seul à la fois, remplacé à chaque cycle vide
+# --------------------------------------------------------------------------
+
+def send_animation(url: str, caption: str) -> int | None:
+    """Envoie un GIF/MP4 par URL, retourne le message_id Telegram ou None."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return None
+    api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendAnimation"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "animation": url,
+        "caption": caption,
+        "parse_mode": "HTML",
+        "disable_notification": True,
+    }
+    try:
+        resp = requests.post(api_url, data=payload, timeout=20)
+        resp.raise_for_status()
+        return resp.json()["result"]["message_id"]
+    except Exception as exc:  # noqa: BLE001
+        print(f"❌ Erreur envoi GIF : {exc}")
+        return None
+
+
+def delete_telegram_message(message_id: int):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+    api_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteMessage"
+    try:
+        requests.post(api_url, data={"chat_id": TELEGRAM_CHAT_ID, "message_id": message_id}, timeout=20)
+    except Exception as exc:  # noqa: BLE001
+        print(f"⚠️ Impossible de supprimer l'ancien GIF (id {message_id}) : {exc}")
+
+
+def load_heartbeat_message_id() -> int | None:
+    if not HEARTBEAT_STATE_FILE.exists():
+        return None
+    try:
+        data = json.loads(HEARTBEAT_STATE_FILE.read_text(encoding="utf-8"))
+        return data.get("message_id")
+    except json.JSONDecodeError:
+        return None
+
+
+def save_heartbeat_message_id(message_id: int | None):
+    HEARTBEAT_STATE_FILE.write_text(json.dumps({"message_id": message_id}), encoding="utf-8")
+
+
+def manage_heartbeat_gif(found_new: bool):
+    """Si rien de neuf ce cycle : supprime l'ancien GIF et en envoie un
+    nouveau. Si quelque chose de neuf est arrivé : supprime le GIF en
+    attente (il n'a plus lieu d'être) sans en renvoyer un."""
+    previous_id = load_heartbeat_message_id()
+
+    if found_new:
+        if previous_id:
+            delete_telegram_message(previous_id)
+            save_heartbeat_message_id(None)
+        return
+
+    if previous_id:
+        delete_telegram_message(previous_id)
+
+    new_id = send_animation(HEARTBEAT_GIF_URL, HEARTBEAT_CAPTION)
+    save_heartbeat_message_id(new_id)
+    if new_id:
+        print("✅ [heartbeat] GIF 'rien de neuf' envoyé.")
+
+
 def extract_image(soup: BeautifulSoup, resp_text: str) -> str | None:
     """Cherche la meilleure image possible : S3 direct -> figure/img -> og:image."""
     s3_matches = re.findall(
@@ -217,40 +299,60 @@ def get_latest_article_links() -> list[str]:
     return links
 
 
-MERCHANT_KEYWORDS = ["amazon", "fnac", "micromania", "leclerc", "cultura", "cdiscount",
-                      "carrefour", "auchan", "lostincult"]
+# Le site fait passer TOUS ses liens marchands par un raccourcisseur
+# d'affiliation (edcol.fr/xxxx) : le nom du marchand n'apparaît jamais dans
+# l'URL, seulement dans le texte visible du lien (ex. "Amazon 34,99€",
+# "Amazon 699€" sans centimes, "Micromania 799,99€ (débit à la commande)").
+# On détecte donc le marchand sur le TEXTE du lien, pas sur son href, et le
+# prix n'a PAS toujours de décimales.
+MERCHANT_TEXT_PATTERN = re.compile(
+    r"^([A-Za-zÀ-ÿ0-9'’\.\-\s]+?)\s+([\d]+(?:[.,]\d{1,2})?)\s*([€£$])", re.UNICODE
+)
+
+# Préfixes parasites parfois collés devant le nom du marchand sur le site
+_NAME_PREFIXES_TO_STRIP = ("exclu ", "précommande ", "dispo ")
 
 
 def detect_merchants(soup: BeautifulSoup) -> tuple[list[dict], list[dict]]:
-    """Repère les liens marchands sur une fiche et les répartit en
-    Disponibilités France / Disponibilité import (£, lostincult, .uk...)."""
+    """Repère les liens marchands sur une fiche (texte 'Marchand prix€') et
+    les répartit en Disponibilités France / Disponibilité import (Belgique,
+    UK, £, .be...)."""
     dispo_fr, dispo_import = [], []
     seen_names = set()
 
     for a in soup.find_all("a", href=True):
-        href = a["href"]
         text = a.get_text(" ", strip=True)
-
-        is_merchant_link = "/out/" in href or any(k in href.lower() for k in MERCHANT_KEYWORDS)
-        if not is_merchant_link:
+        match = MERCHANT_TEXT_PATTERN.match(text)
+        if not match:
             continue
 
-        clean_name = re.sub(r"[\d]+[.,]?\d*\s*[€$£]", "", text).strip()
-        if not clean_name:
-            clean_name = "Lien marchand"
-        dedup_key = clean_name.lower()
+        name, price_num, currency = match.groups()
+        name = name.strip()
+        for prefix in _NAME_PREFIXES_TO_STRIP:
+            if name.lower().startswith(prefix):
+                name = name[len(prefix):].strip()
+                break
+
+        dedup_key = name.lower()
         if dedup_key in seen_names:
             continue
         seen_names.add(dedup_key)
 
-        price_match = re.search(r"([\d]+[.,]?\d*\s*[€$£])", text)
-        if not price_match and a.parent:
-            price_match = re.search(r"([\d]+[.,]?\d*\s*[€$£])", a.parent.get_text(" ", strip=True))
-        price = price_match.group(1).replace(" ", "") if price_match else None
+        price = f"{price_num}{currency}"
+        entry = {"name": name, "url": a["href"], "price": price}
 
-        entry = {"name": clean_name, "url": href, "price": price}
-
-        is_import = "lostincult" in href.lower() or "/uk/" in href.lower() or (price and "£" in price)
+        # étranger si : devise non-€, nom se terminant par un suffixe pays
+        # non-français (.be, .de, .uk, .es, .it, .nl...), ou marchand connu
+        # comme uniquement étranger (Zavvi, Lost in Cult).
+        country_suffix = re.search(r"\.([a-z]{2})$", dedup_key)
+        is_foreign_domain = bool(country_suffix) and country_suffix.group(1) != "fr"
+        is_import = (
+            currency != "€"
+            or is_foreign_domain
+            or "zavvi" in dedup_key
+            or "lostincult" in dedup_key
+            or "lostincult" in a["href"].lower()
+        )
         (dispo_import if is_import else dispo_fr).append(entry)
 
     return dispo_fr, dispo_import
@@ -293,8 +395,10 @@ def format_merchant_line(entry: dict) -> str:
     return f"- {link} {entry['price']}" if entry["price"] else f"- {link}"
 
 
-def format_article_message(article: dict) -> str:
-    lines = [f"🆕 • <b>{escape_html(article['title'])}</b>", ""]
+def format_article_message(article: dict, updated: bool = False) -> str:
+    emoji = "🔄" if updated else "🆕"
+    suffix = " (mise à jour)" if updated else ""
+    lines = [f"{emoji} • <b>{escape_html(article['title'])}</b>{suffix}", ""]
 
     if article["univers"]:
         lines.append(f"• Type : {escape_html(article['univers'])}")
@@ -329,11 +433,75 @@ def format_article_message(article: dict) -> str:
     return "\n".join(lines)
 
 
-def check_collectors():
+def build_article_snapshot(article: dict) -> dict:
+    """Résumé comparable d'une fiche (univers + disponibilités), utilisé
+    pour détecter si elle a changé depuis la dernière vérification."""
+    return {
+        "univers": article.get("univers"),
+        "dispo_fr": sorted(f"{e['name']}|{e['price']}" for e in article["dispo_fr"]),
+        "dispo_import": sorted(f"{e['name']}|{e['price']}" for e in article["dispo_import"]),
+    }
+
+
+def load_snapshots() -> dict:
+    if not SNAPSHOTS_FILE.exists():
+        return {}
+    try:
+        return json.loads(SNAPSHOTS_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def save_snapshots(snapshots: dict):
+    SNAPSHOTS_FILE.write_text(json.dumps(snapshots, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def check_article_updates() -> bool:
+    """Revisite les RECENT_UPDATES_CHECK derniers articles connus et
+    renvoie une notification si leurs disponibilités/prix ont changé.
+    Retourne True si au moins une mise à jour a été notifiée."""
+    seen = load_seen(SEEN_FILE)
+    if not seen:
+        return False
+
+    recent_urls = seen[:RECENT_UPDATES_CHECK]
+    snapshots = load_snapshots()
+    found_update = False
+
+    for url in recent_urls:
+        try:
+            article = parse_article(url)
+        except Exception as exc:  # noqa: BLE001
+            print(f"❌ [maj] Erreur sur {url}: {exc}")
+            continue
+
+        new_snapshot = build_article_snapshot(article)
+        old_snapshot = snapshots.get(url)
+
+        if old_snapshot is not None and old_snapshot != new_snapshot:
+            send_telegram_message(format_article_message(article, updated=True), article["image"], silent=True)
+            print(f"🔄 [maj] Mise à jour notifiée : {article['title']}")
+            found_update = True
+            time.sleep(1)
+
+        snapshots[url] = new_snapshot
+
+    # on ne garde que les snapshots des articles encore suivis (borne la taille du fichier)
+    snapshots = {u: s for u, s in snapshots.items() if u in seen}
+    save_snapshots(snapshots)
+
+    if not found_update:
+        print(f"[maj] Aucun changement sur les {len(recent_urls)} derniers articles vérifiés.")
+
+    return found_update
+
+
+def check_collectors() -> bool:
+    """Retourne True si au moins une nouveauté a été notifiée."""
     latest_links = get_latest_article_links()
     print(f"[collectors] {len(latest_links)} liens trouvés sur la page.")
     if not latest_links:
-        return
+        return False
 
     seen = load_seen(SEEN_FILE)
     first_run = len(seen) == 0
@@ -342,11 +510,11 @@ def check_collectors():
     if first_run:
         print(f"[collectors] Premier lancement : {len(latest_links)} fiches enregistrées, aucune notification envoyée.")
         save_seen(SEEN_FILE, latest_links)
-        return
+        return False
 
     if not new_links:
         print("[collectors] Aucun nouvel article.")
-        return
+        return False
 
     for url in reversed(new_links):  # du plus ancien au plus récent
         try:
@@ -359,6 +527,7 @@ def check_collectors():
 
     updated = latest_links + [u for u in seen if u not in latest_links]
     save_seen(SEEN_FILE, updated)
+    return True
 
 
 # --------------------------------------------------------------------------
@@ -492,10 +661,11 @@ def format_promo_message(promo: dict) -> str:
     return "\n".join(lines)
 
 
-def check_bons_plans():
+def check_bons_plans() -> bool:
+    """Retourne True si au moins une nouveauté a été notifiée."""
     latest_promos = get_latest_promos_raw()
     if not latest_promos:
-        return
+        return False
 
     latest_urls = [p["url"] for p in latest_promos]
     seen = load_seen(SEEN_PROMOS_FILE)
@@ -505,11 +675,11 @@ def check_bons_plans():
     if first_run:
         print(f"[bons-plans] Premier lancement : {len(latest_urls)} promos enregistrées, aucune notification envoyée.")
         save_seen(SEEN_PROMOS_FILE, latest_urls)
-        return
+        return False
 
     if not new_promos:
         print("[bons-plans] Aucune nouvelle promo.")
-        return
+        return False
 
     for promo in reversed(new_promos):  # du plus ancien au plus récent
         try:
@@ -522,53 +692,17 @@ def check_bons_plans():
 
     updated = latest_urls + [u for u in seen if u not in latest_urls]
     save_seen(SEEN_PROMOS_FILE, updated)
-
-
-# --------------------------------------------------------------------------
-# Lancement manuel : message de test + aperçu des 2 derniers éléments
-# --------------------------------------------------------------------------
-
-def send_test_message():
-    send_telegram_message(f"✅ • Workflow réussi, bot opérationnel ({heure_paris()})", None, silent=False)
-    print("✅ Message de test envoyé.")
-
-
-def send_latest_collector_preview():
-    try:
-        article = parse_article(ALAN_WAKE_URL)
-        message = "🔍 <i>Aperçu manuel</i>\n\n" + format_article_message(article)
-        send_telegram_message(message, article["image"], silent=False)
-        print(f"✅ [aperçu] Article envoyé : {article['title']}")
-    except Exception as exc:  # noqa: BLE001
-        print(f"❌ [aperçu] Erreur sur l'article de test : {exc}")
-
-
-def send_latest_bons_plan_preview():
-    try:
-        latest_promos = get_latest_promos_raw()
-        if not latest_promos:
-            print("⚠️ [aperçu] Aucune promo /bons-plans trouvée.")
-            return
-        promo = latest_promos[0]
-        promo["univers"] = get_univers_for_promo(promo["url"])
-        message = "🔍 <i>Aperçu manuel — dernier bon plan publié</i>\n\n" + format_promo_message(promo)
-        send_telegram_message(message, promo["image"], silent=False)
-        print(f"✅ [aperçu] Dernier bon plan envoyé : {promo['title']}")
-    except Exception as exc:  # noqa: BLE001
-        print(f"❌ [aperçu] Erreur sur le dernier bon plan : {exc}")
+    return True
 
 
 def main():
     log_pointeuse()
 
-    is_manual = TRIGGER_EVENT == "workflow_dispatch"
-    if is_manual:
-        send_test_message()
-        send_latest_collector_preview()
-        send_latest_bons_plan_preview()
+    found_collectors = check_collectors()
+    found_updates = check_article_updates()
+    found_promos = check_bons_plans()
 
-    check_collectors()
-    check_bons_plans()
+    manage_heartbeat_gif(found_new=found_collectors or found_updates or found_promos)
 
 
 if __name__ == "__main__":
