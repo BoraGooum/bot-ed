@@ -3,7 +3,7 @@ name: Check New Articles
 on:
   schedule:
     - cron: '*/15 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -15,32 +15,30 @@ jobs:
     steps:
       - name: Checkout du dépôt
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Configuration de Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Installation des dépendances
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4
+          pip install -r requirements.txt
 
       - name: Exécution du script de vérification
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-          TZ: "Europe/Paris"
+          TRIGGER_EVENT: ${{ github.event_name }}
         run: python check_new_articles.py
 
-      - name: Commit et Push des modifications (pointeuse.txt)
+      - name: Commit et push des fichiers de suivi
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase || true
-          git add pointeuse.txt
-          git commit -m "Chore: mise à jour pointeuse [skip ci]" || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          for f in seen_articles.json seen_promos.json pointeuse.txt; do
+            [ -f "$f" ] && git add "$f"
+          done
+          git diff --staged --quiet || git commit -m "chore: update tracking files [skip ci]"
           git push
