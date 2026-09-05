@@ -35,6 +35,7 @@ from bs4 import BeautifulSoup
 BASE_URL = "https://editioncollector.fr"
 LISTING_URL = f"{BASE_URL}/collectors"
 BONS_PLANS_URL = f"{BASE_URL}/bons-plans"
+ALAN_WAKE_URL = f"{BASE_URL}/collectors/alan-wake-design-works-deluxe-edition"
 
 SEEN_FILE = Path(__file__).parent / "seen_articles.json"
 SEEN_PROMOS_FILE = Path(__file__).parent / "seen_promos.json"
@@ -101,6 +102,19 @@ def normalize_href(href: str, prefix: str) -> str | None:
 
 def escape_html(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def extract_category(page_text: str) -> str | None:
+    """Le site distingue 'Type' (précis, ex. Artbook, Manga, Steelbook) et
+    'Univers' (large, ex. Livres, Jeux vidéo). On préfère le Type quand il
+    existe, et on retombe sur l'Univers sinon."""
+    m = re.search(r"Type\s*:\s*([^\n]+)", page_text)
+    if m:
+        return m.group(1).strip()
+    m = re.search(r"Univers\s*:\s*([^\n]+)", page_text)
+    if m:
+        return m.group(1).strip()
+    return None
 
 
 def build_hashtag(univers: str | None) -> str:
@@ -216,10 +230,7 @@ def parse_article(url: str) -> dict:
 
     page_text = soup.get_text("\n", strip=True)
 
-    univers = None
-    m = re.search(r"Univers\s*:\s*([^\n]+)", page_text)
-    if m:
-        univers = m.group(1).strip()
+    univers = extract_category(page_text)
 
     # Tous les marchands avec prix, dans l'ordre où ils apparaissent
     merchants = []
@@ -246,8 +257,7 @@ def parse_article(url: str) -> dict:
 
 
 def format_article_message(article: dict) -> str:
-    lines = ["🆕 • <b>Nouvel Article !</b>", ""]
-    lines.append(f"<b>{escape_html(article['title'])}</b>")
+    lines = [f"🆕 • <b>{escape_html(article['title'])}</b>", ""]
     if article["univers"]:
         lines.append(f"Type : {escape_html(article['univers'])}")
 
@@ -379,7 +389,7 @@ def get_latest_promos_raw() -> list[dict]:
 
 
 def get_univers_for_promo(promo_url: str) -> str | None:
-    """Va chercher le type (univers) sur la fiche promo, ou sur la fiche
+    """Va chercher le Type/Univers sur la fiche promo, ou sur la fiche
     collector associée si elle y est liée."""
     try:
         soup = fetch(promo_url)
@@ -387,9 +397,9 @@ def get_univers_for_promo(promo_url: str) -> str | None:
         return None
 
     page_text = soup.get_text("\n", strip=True)
-    m = re.search(r"Univers\s*:\s*([^\n]+)", page_text)
-    if m:
-        return m.group(1).strip()
+    category = extract_category(page_text)
+    if category:
+        return category
 
     for a in soup.find_all("a", href=True):
         rel = normalize_href(a["href"], "collectors")
@@ -400,17 +410,16 @@ def get_univers_for_promo(promo_url: str) -> str | None:
         except Exception:  # noqa: BLE001
             continue
         sub_text = sub_soup.get_text("\n", strip=True)
-        m2 = re.search(r"Univers\s*:\s*([^\n]+)", sub_text)
-        if m2:
-            return m2.group(1).strip()
+        sub_category = extract_category(sub_text)
+        if sub_category:
+            return sub_category
         break
 
     return None
 
 
 def format_promo_message(promo: dict) -> str:
-    lines = ["💸 • <b>Bon plan !</b>", ""]
-    lines.append(f"<b>{escape_html(promo['title'])}</b>")
+    lines = [f"💸 • <b>{escape_html(promo['title'])}</b>", ""]
     if promo.get("univers"):
         lines.append(f"Type : {escape_html(promo['univers'])}")
 
@@ -469,22 +478,18 @@ def check_bons_plans():
 # --------------------------------------------------------------------------
 
 def send_test_message():
-    send_telegram_message(f"✅ • Le bot fonctionne (test manuel du {heure_paris()})", None, silent=False)
+    send_telegram_message(f"✅ • Workflow réussi, bot opérationnel ({heure_paris()})", None, silent=False)
     print("✅ Message de test envoyé.")
 
 
 def send_latest_collector_preview():
     try:
-        latest_links = get_latest_article_links()
-        if not latest_links:
-            print("⚠️ [aperçu] Aucun article /collectors trouvé.")
-            return
-        article = parse_article(latest_links[0])
-        message = "🔍 <i>Aperçu manuel — dernier article publié</i>\n\n" + format_article_message(article)
+        article = parse_article(ALAN_WAKE_URL)
+        message = "🔍 <i>Aperçu manuel</i>\n\n" + format_article_message(article)
         send_telegram_message(message, article["image"], silent=False)
-        print(f"✅ [aperçu] Dernier collector envoyé : {article['title']}")
+        print(f"✅ [aperçu] Article envoyé : {article['title']}")
     except Exception as exc:  # noqa: BLE001
-        print(f"❌ [aperçu] Erreur sur le dernier collector : {exc}")
+        print(f"❌ [aperçu] Erreur sur l'article de test : {exc}")
 
 
 def send_latest_bons_plan_preview():
