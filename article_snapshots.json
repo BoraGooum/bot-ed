@@ -367,5 +367,39 @@
       "Amazon.be|115,99€",
       "Fnac.be|115,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/appareil-photo-instantane-polaroid-now-generation-3-edition-pokemon": {
+    "univers": "Goodies",
+    "dispo_fr": [
+      "Amazon|139,99€",
+      "Cultura|139,99€",
+      "Fnac|139,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/appareil-photo-instantane-polaroid-now-generation-3-edition-pokemon-pikachu": {
+    "univers": "Goodies",
+    "dispo_fr": [
+      "Amazon|99,99€",
+      "Cultura|99,99€",
+      "Fnac|99,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/appareil-photo-instantane-polaroid-now-generation-3-edition-pokemon-nymphali": {
+    "univers": "Goodies",
+    "dispo_fr": [
+      "Amazon|99,99€",
+      "Cultura|99,99€",
+      "Fnac|99,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/clair-obscur-expedition-33-mirror-edition-ps5": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|59,99€"
+    ],
+    "dispo_import": []
   }
 }
