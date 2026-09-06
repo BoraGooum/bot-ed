@@ -401,5 +401,15 @@
       "Amazon|59,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/gwent-le-jeu-de-cartes-legendaire-the-witcher-3-wild-hunt": {
+    "univers": "Print",
+    "dispo_fr": [
+      "Cultura|31,49€",
+      "Fnac|31,99€",
+      "Micromania|34,99€",
+      "en précommande à|31,5€"
+    ],
+    "dispo_import": []
   }
 }
