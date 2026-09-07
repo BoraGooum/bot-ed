@@ -678,5 +678,16 @@
       "en précommande à|23€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/fast-and-furious-edition-collector-edition-25eme-anniversaire": {
+    "univers": "Édition collector",
+    "dispo_fr": [
+      "Fnac|84,99€",
+      "en précommande à|60€"
+    ],
+    "dispo_import": [
+      "Amazon.it|59,99€",
+      "Zavvi.fr|63,99€"
+    ]
   }
 }
