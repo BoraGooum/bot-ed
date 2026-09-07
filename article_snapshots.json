@@ -539,5 +539,21 @@
       "Amazon|16€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/until-dawn-2": {
+    "univers": "Standard",
+    "dispo_fr": [],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/assassin-s-creed-iv-black-flag-bande-originale-coffret-5-vinyles-noirs": {
+    "univers": "Bande originale Jeux-vidéo",
+    "dispo_fr": [
+      "Amazon|109,99€",
+      "Cultura|129,99€",
+      "Fnac|109,99€",
+      "Leclerc|109,99€",
+      "en précommande à|110€"
+    ],
+    "dispo_import": []
   }
 }
