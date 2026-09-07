@@ -469,5 +469,18 @@
       "Amazon.be|32€",
       "Fnac.be|32€"
     ]
+  },
+  "https://editioncollector.fr/collectors/cyberpunk-2077-chrome-comics": {
+    "univers": "Comics",
+    "dispo_fr": [
+      "Amazon|16€",
+      "Cultura|16€",
+      "Fnac|16€",
+      "Leclerc|16€"
+    ],
+    "dispo_import": [
+      "Amazon.be|16€",
+      "Fnac.be|16,15€"
+    ]
   }
 }
