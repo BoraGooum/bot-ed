@@ -628,5 +628,15 @@
     "dispo_import": [
       "Serenity Forge|119,99$"
     ]
+  },
+  "https://editioncollector.fr/collectors/rain-world-anthology-edition-premium-ps5": {
+    "univers": "Édition limitée",
+    "dispo_fr": [],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/rain-world-anthology-edition-premium-switch-2": {
+    "univers": "Édition limitée",
+    "dispo_fr": [],
+    "dispo_import": []
   }
 }
