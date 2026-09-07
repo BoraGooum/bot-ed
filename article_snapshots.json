@@ -887,5 +887,17 @@
       "Amazon.be|39,66€",
       "Fnac.be|39,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/et-pour-quelques-dollars-de-plus-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|28,63€",
+      "Cultura|28,63€",
+      "Fnac|34,99€",
+      "Leclerc|28,63€"
+    ],
+    "dispo_import": [
+      "Fnac.be|34,99€"
+    ]
   }
 }
