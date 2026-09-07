@@ -614,5 +614,19 @@
     "dispo_import": [
       "Fnac.be|39,75€"
     ]
+  },
+  "https://editioncollector.fr/collectors/rain-world-anthology-edition-collector-ps5": {
+    "univers": "Édition collector",
+    "dispo_fr": [],
+    "dispo_import": [
+      "Serenity Forge|119,99$"
+    ]
+  },
+  "https://editioncollector.fr/collectors/rain-world-anthology-edition-collector-switch-2": {
+    "univers": "Édition collector",
+    "dispo_fr": [],
+    "dispo_import": [
+      "Serenity Forge|119,99$"
+    ]
   }
 }
