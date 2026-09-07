@@ -555,5 +555,17 @@
       "en précommande à|110€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/indochine-arena-tour-le-film-blu-ray-4k": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|26,99€",
+      "Cultura|26,99€",
+      "Fnac|25,99€",
+      "Leclerc|29,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|25,99€"
+    ]
   }
 }
