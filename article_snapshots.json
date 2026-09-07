@@ -512,5 +512,18 @@
       "Micromania|24,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/troie-l-integrale-roman": {
+    "univers": "Roman",
+    "dispo_fr": [
+      "Amazon|50€",
+      "Cultura|50€",
+      "Fnac|50€",
+      "Leclerc|50€"
+    ],
+    "dispo_import": [
+      "Amazon.be|50€",
+      "Fnac.be|50€"
+    ]
   }
 }
