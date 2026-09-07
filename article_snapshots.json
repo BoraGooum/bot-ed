@@ -411,5 +411,30 @@
       "en précommande à|31,5€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/legacy-of-kain-defiance-remastered": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|49,99€",
+      "Cdiscount|49,99€",
+      "Cultura|49,99€",
+      "Fnac|49,99€",
+      "Leclerc|49,90€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/moonlighter-2-the-endless-vault-edition-collector-ps5": {
+    "univers": "Édition collector",
+    "dispo_fr": [
+      "Amazon|69,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/moonlighter-2-the-endless-vault-edition-collector-switch-2": {
+    "univers": "Édition collector",
+    "dispo_fr": [
+      "Amazon|79,99€"
+    ],
+    "dispo_import": []
   }
 }
