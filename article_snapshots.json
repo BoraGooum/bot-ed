@@ -808,5 +808,35 @@
       "Fnac|54,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/iron-maiden-burning-ambition-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cultura|29,99€",
+      "Fnac|34,99€",
+      "Leclerc|29,99€",
+      "en précommande à|31€"
+    ],
+    "dispo_import": [
+      "Fnac.be|34,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/iron-maiden-burning-ambition-edition-collector-speciale-fnac": {
+    "univers": "Édition collector",
+    "dispo_fr": [
+      "Fnac vient d'ajouter|20€",
+      "Fnac|69,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|69,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/inside-llewyn-davis-edition-limitee-speciale-fnac-blu-ray-4k": {
+    "univers": "Édition limitée",
+    "dispo_fr": [
+      "Fnac|24,99€"
+    ],
+    "dispo_import": []
   }
 }
