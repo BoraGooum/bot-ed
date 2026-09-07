@@ -849,5 +849,43 @@
     "dispo_import": [
       "Fnac.be|33,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/simetierre-steelbook-edition-limitee-blu-ray-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|27,05€",
+      "Fnac|29,99€",
+      "Leclerc|29,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|29,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/vendredi-13-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|34,99€",
+      "Cultura|29,99€",
+      "Fnac|34,99€",
+      "Leclerc|35,04€",
+      "en précommande à|30€"
+    ],
+    "dispo_import": [
+      "Amazon.be|34,70€",
+      "Fnac.be|34,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/primal-l-integrale-des-saisons-1-a-3-blu-ray": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|40,05€",
+      "Cultura|39,99€",
+      "Fnac|39,99€",
+      "Leclerc|40,05€"
+    ],
+    "dispo_import": [
+      "Amazon.be|39,66€",
+      "Fnac.be|39,99€"
+    ]
   }
 }
