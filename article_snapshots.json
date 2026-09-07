@@ -577,5 +577,12 @@
       "Fnac|45,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/manette-sans-fil-8bitdo-ultimate-3-mossy-lagoon": {
+    "univers": "Manettes",
+    "dispo_fr": [
+      "Amazon|89,99€"
+    ],
+    "dispo_import": []
   }
 }
