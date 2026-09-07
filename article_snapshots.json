@@ -899,5 +899,10 @@
     "dispo_import": [
       "Fnac.be|34,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/final-fantasy-vii-remake-series-complete-edition-edition-collector-ps5": {
+    "univers": "Édition collector",
+    "dispo_fr": [],
+    "dispo_import": []
   }
 }
