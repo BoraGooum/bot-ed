@@ -456,5 +456,18 @@
     "univers": "Steelbook",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/cyberpunk-2077-l-integrale-volume-2-comics": {
+    "univers": "Comics",
+    "dispo_fr": [
+      "Amazon|32€",
+      "Cultura|32€",
+      "Fnac|32€",
+      "Leclerc|32€"
+    ],
+    "dispo_import": [
+      "Amazon.be|32€",
+      "Fnac.be|32€"
+    ]
   }
 }
