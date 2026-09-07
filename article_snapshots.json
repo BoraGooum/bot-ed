@@ -650,5 +650,12 @@
     "dispo_import": [
       "Insight Editions|295$"
     ]
+  },
+  "https://editioncollector.fr/collectors/the-fine-art-of-rocky-edition-limitee-signee-artbook": {
+    "univers": "Artbook",
+    "dispo_fr": [],
+    "dispo_import": [
+      "Insight Editions|600$"
+    ]
   }
 }
