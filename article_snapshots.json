@@ -710,5 +710,28 @@
       "Amazon.be|29,99€",
       "Fnac.be|29,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/van-helsing-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cultura|29,99€",
+      "Fnac|29,99€",
+      "Leclerc|29,99€",
+      "en précommande à|27€"
+    ],
+    "dispo_import": [
+      "Amazon.be|29,99€",
+      "Fnac.be|29,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/van-helsing-coffret-steelbook-collector-blu-ray-4k": {
+    "univers": "Édition collector",
+    "dispo_fr": [
+      "Fnac|49,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|49,99€"
+    ]
   }
 }
