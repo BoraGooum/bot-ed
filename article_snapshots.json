@@ -436,5 +436,20 @@
       "Amazon|79,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/lego-batman-l-heritage-du-chevalier-noir-switch-2": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|50,05€",
+      "Auchan|51,99€",
+      "Carrefour|59,99€",
+      "Cdiscount|51,99€",
+      "Cultura|69,99€",
+      "Fnac|69,99€",
+      "Leclerc|50,05€",
+      "Micromania|69,99€",
+      "en précommande à|50€"
+    ],
+    "dispo_import": []
   }
 }
