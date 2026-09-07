@@ -838,5 +838,16 @@
       "Fnac|24,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/blood-simple-sang-pour-sang-steelbook-blu-ray-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Cultura|29,99€",
+      "Fnac|29,99€",
+      "Leclerc|29,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|33,99€"
+    ]
   }
 }
