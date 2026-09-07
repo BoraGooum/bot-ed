@@ -766,5 +766,40 @@
       "en précommande à|61€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-episode-iv-un-nouvel-espoir-bande-originale-vinyle-bleu-version-japonaise": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Fnac|67,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-episode-v-l-empire-contre-attaque-bande-originale-vinyle-rouge-version-japonaise": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Fnac|67,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-episode-vi-le-retour-du-jedi-bande-originale-vinyle-vert-version-japonaise": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Fnac|54,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-the-mandalorian-saison-1-bande-originale-vinyle-marron-version-japonaise": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Fnac|54,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-the-mandalorian-saison-2-bande-originale-vinyle-vert-version-japonaise": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Fnac|54,99€"
+    ],
+    "dispo_import": []
   }
 }
