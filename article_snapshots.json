@@ -497,5 +497,12 @@
       "Fnac.be|34,99€",
       "Zavvi|47,48€"
     ]
+  },
+  "https://editioncollector.fr/collectors/la-librairie-book-nook-lego-icons": {
+    "univers": "LEGO",
+    "dispo_fr": [
+      "boutique LEGO|129,99€"
+    ],
+    "dispo_import": []
   }
 }
