@@ -657,5 +657,12 @@
     "dispo_import": [
       "Insight Editions|600$"
     ]
+  },
+  "https://editioncollector.fr/collectors/super-world-war-switch": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|34,99€"
+    ],
+    "dispo_import": []
   }
 }
