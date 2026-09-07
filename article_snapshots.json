@@ -482,5 +482,20 @@
       "Amazon.be|16€",
       "Fnac.be|16,15€"
     ]
+  },
+  "https://editioncollector.fr/collectors/entretien-avec-un-vampire-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cultura|29,99€",
+      "Fnac|34,99€",
+      "Leclerc|29,99€",
+      "en précommande à|30€"
+    ],
+    "dispo_import": [
+      "Amazon.be|34,70€",
+      "Fnac.be|34,99€",
+      "Zavvi|47,48€"
+    ]
   }
 }
