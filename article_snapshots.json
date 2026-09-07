@@ -504,5 +504,13 @@
       "boutique LEGO|129,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/sesame-street-amis-et-fun-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|24,99€",
+      "Micromania|24,99€"
+    ],
+    "dispo_import": []
   }
 }
