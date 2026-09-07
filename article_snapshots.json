@@ -664,5 +664,19 @@
       "Amazon|34,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/minecraft-switch-2": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|22,99€",
+      "Auchan|22,90€",
+      "Cdiscount|25,90€",
+      "Cultura|29,99€",
+      "Fnac|29,99€",
+      "Leclerc|31,90€",
+      "Micromania|29,99€",
+      "en précommande à|23€"
+    ],
+    "dispo_import": []
   }
 }
