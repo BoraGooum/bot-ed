@@ -602,5 +602,17 @@
     "univers": "Édition collector",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/arrete-de-me-chauffer-nagatoro-partie-1-coffret-edition-limitee-numerotee-tomes-1-a-5-manga": {
+    "univers": "Manga",
+    "dispo_fr": [
+      "Amazon|39,75€",
+      "Cultura|39,75€",
+      "Fnac|39,75€",
+      "Leclerc|39,75€"
+    ],
+    "dispo_import": [
+      "Fnac.be|39,75€"
+    ]
   }
 }
