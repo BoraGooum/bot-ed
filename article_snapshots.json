@@ -597,5 +597,10 @@
       "Amazon.be|7,90€",
       "Fnac.be|7,95€"
     ]
+  },
+  "https://editioncollector.fr/collectors/le-cauchemar-de-dracula-edition-collector-limitee-blu-ray-4k": {
+    "univers": "Édition collector",
+    "dispo_fr": [],
+    "dispo_import": []
   }
 }
