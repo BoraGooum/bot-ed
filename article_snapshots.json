@@ -689,5 +689,26 @@
       "Amazon.it|59,99€",
       "Zavvi.fr|63,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/madame-doubtfire-1993-blu-ray-4k": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Fnac|24,99€",
+      "Leclerc|24,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/paprika-2005-steelbook-edition-limitee": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|30,04€",
+      "Cultura|29,99€",
+      "Fnac|29,99€",
+      "Leclerc|29,99€"
+    ],
+    "dispo_import": [
+      "Amazon.be|29,99€",
+      "Fnac.be|29,99€"
+    ]
   }
 }
