@@ -733,5 +733,38 @@
     "dispo_import": [
       "Fnac.be|49,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/final-fantasy-vii-revelation-edition-day-one": {
+    "univers": "day one",
+    "dispo_fr": [
+      "Amazon|79,99€",
+      "Carrefour|60,99€",
+      "Micromania|79,99€",
+      "Square Enix|79,99€",
+      "en précommande à|61€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/final-fantasy-vii-revelation-edition-day-one-xbox": {
+    "univers": "day one",
+    "dispo_fr": [
+      "Amazon|79,99€",
+      "Carrefour|60,99€",
+      "Micromania|79,99€",
+      "Square Enix|79,99€",
+      "en précommande à|61€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/final-fantasy-vii-revelation-edition-day-one-switch-2": {
+    "univers": "day one",
+    "dispo_fr": [
+      "Amazon|79,99€",
+      "Carrefour|60,99€",
+      "Micromania|79,99€",
+      "Square Enix|79,99€",
+      "en précommande à|61€"
+    ],
+    "dispo_import": []
   }
 }
