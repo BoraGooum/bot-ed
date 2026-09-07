@@ -567,5 +567,15 @@
     "dispo_import": [
       "Fnac.be|25,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/toy-story-5-bande-originale-en-double-vinyle": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Amazon|47,56€",
+      "Black Screen Records|48€",
+      "Cultura|49,99€",
+      "Fnac|45,99€"
+    ],
+    "dispo_import": []
   }
 }
