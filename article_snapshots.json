@@ -584,5 +584,18 @@
       "Amazon|89,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/ryukyu-buccaneer-tome-1-edition-collector-manga": {
+    "univers": "Manga",
+    "dispo_fr": [
+      "Amazon|7,90€",
+      "Cultura|7,90€",
+      "Fnac|7,90€",
+      "Leclerc|7,90€"
+    ],
+    "dispo_import": [
+      "Amazon.be|7,90€",
+      "Fnac.be|7,95€"
+    ]
   }
 }
