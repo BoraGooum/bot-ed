@@ -525,5 +525,19 @@
       "Amazon.be|50€",
       "Fnac.be|50€"
     ]
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-avatar-le-dernier-maitre-de-l-air-de-l-esprit-de-l-eau-ed-limitee-ultra": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Micromania|29,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-guns-n-roses-de-slash-november-rain": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Amazon|16€"
+    ],
+    "dispo_import": []
   }
 }
