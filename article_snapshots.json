@@ -801,5 +801,12 @@
       "Fnac|54,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-the-mandalorian-saison-3-bande-originale-vinyle-jaune-version-japonaise": {
+    "univers": "Bande originale films",
+    "dispo_fr": [
+      "Fnac|54,99€"
+    ],
+    "dispo_import": []
   }
 }
