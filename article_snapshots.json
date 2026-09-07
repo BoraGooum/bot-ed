@@ -643,5 +643,12 @@
     "univers": "Steelbook",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/filming-the-odyssey-edition-limitee-signee-artbook": {
+    "univers": "Artbook",
+    "dispo_fr": [],
+    "dispo_import": [
+      "Insight Editions|295$"
+    ]
   }
 }
