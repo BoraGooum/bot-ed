@@ -1074,5 +1074,15 @@
       "Leclerc|24,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/stage-tour-switch-2": {
+    "univers": "Édition collector",
+    "dispo_fr": [
+      "Amazon|134,99€",
+      "Cultura|119,99€",
+      "Micromania|149,99€",
+      "en précommande à|120€"
+    ],
+    "dispo_import": []
   }
 }
