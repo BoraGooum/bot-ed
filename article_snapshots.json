@@ -974,5 +974,20 @@
     "univers": "Steelbook",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/viscerafest-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|24,99€",
+      "Leclerc|15,90€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/viscerafest-switch": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Leclerc|15,90€"
+    ],
+    "dispo_import": []
   }
 }
