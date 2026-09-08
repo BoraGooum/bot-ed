@@ -1030,5 +1030,30 @@
       "PlayStation Direct|84,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/statuette-en-pvc-d-un-metroid-dans-metroid-prime-par-first-4-figures": {
+    "univers": "Figurines PVC",
+    "dispo_fr": [
+      "Derive figurine|59,99€",
+      "LDLC|69,99€",
+      "Micromania|69,99€"
+    ],
+    "dispo_import": [
+      "First 4 Figures|125,99$"
+    ]
+  },
+  "https://editioncollector.fr/collectors/marvel-s-wolverine-edition-collector-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|61,99€",
+      "Auchan|61,99€",
+      "Carrefour|62€",
+      "Cdiscount|69,99€",
+      "Fnac|69,99€",
+      "Leclerc|60,90€",
+      "Micromania|79,99€",
+      "en précommande à|62€"
+    ],
+    "dispo_import": []
   }
 }
