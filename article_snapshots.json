@@ -78,6 +78,7 @@
     "univers": "Édition collector",
     "dispo_fr": [
       "Auchan|51,99€",
+      "Carrefour|54,99€",
       "en précommande à|52€"
     ],
     "dispo_import": []
@@ -86,6 +87,7 @@
     "univers": "Console",
     "dispo_fr": [
       "Auchan|499,99€",
+      "Carrefour|541,90€",
       "Cdiscount|519,99€"
     ],
     "dispo_import": []
@@ -93,6 +95,7 @@
   "https://editioncollector.fr/collectors/manette-pro-nintendo-switch-2-the-legend-of-zelda-edition-limitee-40e-anniversaire": {
     "univers": "Manettes",
     "dispo_fr": [
+      "Carrefour|109,99€",
       "Cdiscount|99,99€"
     ],
     "dispo_import": []
@@ -1309,6 +1312,11 @@
     "dispo_fr": [
       "Fnac|34,99€"
     ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/mouse-p-i-for-hire-artbook-officiel": {
+    "univers": "Artbook",
+    "dispo_fr": [],
     "dispo_import": []
   }
 }
