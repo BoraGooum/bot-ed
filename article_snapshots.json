@@ -1016,5 +1016,19 @@
       "Leclerc|49,90€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/manette-dualsense-marvel-s-wolverine-battle-yellow-edition-limitee": {
+    "univers": "Manettes",
+    "dispo_fr": [
+      "Amazon|84,99€",
+      "Auchan|84,99€",
+      "Carrefour|84,99€",
+      "Cdiscount|84,99€",
+      "Fnac|84,99€",
+      "Leclerc|84,99€",
+      "Micromania|84,99€",
+      "PlayStation Direct|84,99€"
+    ],
+    "dispo_import": []
   }
 }
