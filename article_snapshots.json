@@ -1239,5 +1239,18 @@
     "univers": "Manettes",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/ace-combat-8-wings-of-theve-edition-deluxe-ps5": {
+    "univers": "deluxe",
+    "dispo_fr": [
+      "Amazon|76,57€",
+      "Carrefour|109,99€",
+      "Cdiscount|109€",
+      "Cultura|109€",
+      "Fnac|109,99€",
+      "Leclerc|109€",
+      "Micromania|109,99€"
+    ],
+    "dispo_import": []
   }
 }
