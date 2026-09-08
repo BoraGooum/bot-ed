@@ -1179,7 +1179,7 @@
       "Cdiscount|36,99€",
       "Cultura|49,99€",
       "Fnac|49,99€",
-      "Leclerc|39,99€",
+      "Leclerc|36,99€",
       "Micromania|49,99€",
       "en précommande à|37€"
     ],
@@ -1188,15 +1188,15 @@
   "https://editioncollector.fr/collectors/hot-wheels-infinite-rush-edition-standard-switch-2": {
     "univers": "Standard",
     "dispo_fr": [
-      "Amazon|39,99€",
-      "Auchan|39,99€",
+      "Amazon|36,99€",
+      "Auchan|36,99€",
       "Carrefour|49,99€",
-      "Cdiscount|49,99€",
+      "Cdiscount|39,99€",
       "Cultura|49,99€",
       "Fnac|49,99€",
       "Leclerc|39,99€",
       "Micromania|49,99€",
-      "en précommande à|40€"
+      "en précommande à|37€"
     ],
     "dispo_import": []
   }
