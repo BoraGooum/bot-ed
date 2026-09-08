@@ -998,5 +998,23 @@
       "Leclerc|15,90€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/manette-dualsense-marvel-s-wolverine-adamantium-edition-limitee": {
+    "univers": "Manettes",
+    "dispo_fr": [
+      "PlayStation Direct|84,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/legacy-of-kain-defiance-remastered-deluxe-edition-steelbook-switch": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|49,99€",
+      "Cdiscount|49,99€",
+      "Cultura|49,99€",
+      "Fnac|49,99€",
+      "Leclerc|49,90€"
+    ],
+    "dispo_import": []
   }
 }
