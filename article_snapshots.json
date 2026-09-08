@@ -81,7 +81,7 @@
       "Carrefour|54,99€",
       "Cdiscount|59,99€",
       "Leclerc|51,49€",
-      "Micromania|79,99€",
+      "Micromania|69,99€",
       "en précommande à|52€"
     ],
     "dispo_import": []
@@ -1251,7 +1251,9 @@
   "https://editioncollector.fr/collectors/pochette-de-transport-rigide-edition-limitee-40e-anniversaire-the-legend-of-zelda": {
     "univers": "Protections",
     "dispo_fr": [
-      "Cdiscount|34,99€"
+      "Carrefour|34,99€",
+      "Cdiscount|34,99€",
+      "Micromania|34,99€"
     ],
     "dispo_import": []
   },
