@@ -80,9 +80,11 @@
       "Auchan|51,99€",
       "Carrefour|54,99€",
       "Cdiscount|59,99€",
+      "Fnac|59,99€",
+      "Joybuy|59,99€",
       "Leclerc|51,49€",
       "Micromania|69,99€",
-      "en précommande à|52€"
+      "en précommande à|60€"
     ],
     "dispo_import": []
   },
@@ -93,8 +95,9 @@
       "Carrefour|541,90€",
       "Cdiscount|519,99€",
       "Cultura|469,99€",
+      "Fnac|489,99€",
       "Leclerc|469€",
-      "en précommande à|470€"
+      "en précommande à|490€"
     ],
     "dispo_import": []
   },
@@ -103,7 +106,8 @@
     "dispo_fr": [
       "Carrefour|109,99€",
       "Cdiscount|99,99€",
-      "Cultura|79,99€"
+      "Cultura|79,99€",
+      "Fnac|99,99€"
     ],
     "dispo_import": []
   },
@@ -1253,6 +1257,7 @@
     "dispo_fr": [
       "Carrefour|34,99€",
       "Cdiscount|34,99€",
+      "Fnac|39,99€",
       "Micromania|34,99€"
     ],
     "dispo_import": []
