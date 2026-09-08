@@ -80,6 +80,7 @@
       "Auchan|51,99€",
       "Carrefour|54,99€",
       "Cdiscount|59,99€",
+      "Leclerc|51,49€",
       "en précommande à|52€"
     ],
     "dispo_import": []
@@ -90,7 +91,9 @@
       "Auchan|499,99€",
       "Carrefour|541,90€",
       "Cdiscount|519,99€",
-      "Cultura|469,99€"
+      "Cultura|469,99€",
+      "Leclerc|469€",
+      "en précommande à|470€"
     ],
     "dispo_import": []
   },
