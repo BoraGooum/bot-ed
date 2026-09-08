@@ -918,5 +918,38 @@
     "dispo_import": [
       "Amazon.co.uk|58,40€"
     ]
+  },
+  "https://editioncollector.fr/collectors/playstation-5-pro-ps5-pro": {
+    "univers": "Jeux vidéo",
+    "dispo_fr": [
+      "Amazon|699€",
+      "Auchan|799,99€",
+      "Carrefour|699,99€",
+      "Cdiscount|799€",
+      "Cultura|799,99€",
+      "Direct PlayStation|799,99€",
+      "Fnac|799,99€",
+      "Leclerc|699€",
+      "Micromania|799,99€",
+      "Playstation Direct|749,99€",
+      "de retour en stock à|900€",
+      "en promo à|750€"
+    ],
+    "dispo_import": [
+      "Fnac.be|799,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/dragon-s-dogma-2-dark-arisen-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|39,99€",
+      "Cdiscount|49,99€",
+      "Cultura|49,99€",
+      "Fnac|49,99€",
+      "Leclerc|49,99€",
+      "Micromania|49,99€",
+      "en précommande à|40€"
+    ],
+    "dispo_import": []
   }
 }
