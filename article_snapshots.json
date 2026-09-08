@@ -1115,5 +1115,28 @@
       "Amazon|18,00€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/ps5-digital-edition-marvel-s-wolverine-battle-yellow-edition-limitee": {
+    "univers": "Console",
+    "dispo_fr": [
+      "Amazon|649,99€",
+      "Auchan|649,99€",
+      "Carrefour|649,99€",
+      "Cdiscount|649,99€",
+      "Cultura|649,99€",
+      "Disponible également à boulanger à|599€",
+      "Fnac|649,99€",
+      "Leclerc|649€",
+      "Micromania|649,99€",
+      "PlayStation Direct|649,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/coques-ps5-marvel-s-wolverine-battle-yellow-edition-limitee": {
+    "univers": "Protections",
+    "dispo_fr": [
+      "PlayStation Direct|74,99€"
+    ],
+    "dispo_import": []
   }
 }
