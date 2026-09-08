@@ -1272,5 +1272,26 @@
     "univers": "Manettes",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/le-grinch-2-a-la-rescousse-de-noel-switch": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|39,99€",
+      "Cultura|39,99€",
+      "Fnac|39,99€",
+      "Leclerc|39,99€",
+      "Micromania|39,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/le-grinch-2-a-la-rescousse-de-noel-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|39,99€",
+      "Cultura|39,99€",
+      "Leclerc|39,99€",
+      "Micromania|39,99€"
+    ],
+    "dispo_import": []
   }
 }
