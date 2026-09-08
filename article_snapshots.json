@@ -1199,5 +1199,19 @@
       "en précommande à|37€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/dispatch-edition-deluxe-steelbook-ps5": {
+    "univers": "Steelbook",
+    "dispo_fr": [],
+    "dispo_import": [
+      "Panax Store|59,99$"
+    ]
+  },
+  "https://editioncollector.fr/collectors/dispatch-edition-deluxe-steelbook-switch-2": {
+    "univers": "Steelbook",
+    "dispo_fr": [],
+    "dispo_import": [
+      "Panax Store|59,99$"
+    ]
   }
 }
