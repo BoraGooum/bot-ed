@@ -851,6 +851,7 @@
   "https://editioncollector.fr/collectors/blood-simple-sang-pour-sang-steelbook-blu-ray-4k": {
     "univers": "Steelbook",
     "dispo_fr": [
+      "Amazon|27,04€",
       "Cultura|29,99€",
       "Fnac|29,99€",
       "Leclerc|29,99€"
@@ -1216,6 +1217,11 @@
   },
   "https://editioncollector.fr/collectors/link-epona-lego-zelda-ocarina-of-time": {
     "univers": "LEGO",
+    "dispo_fr": [],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-amiibo-link-enfant-zelda-ocarina-of-time": {
+    "univers": "Figurines PVC",
     "dispo_fr": [],
     "dispo_import": []
   }
