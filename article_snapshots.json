@@ -1080,5 +1080,40 @@
       "en précommande à|120€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-d-ichigo-demi-hollowfied-dans-bleach-thousand-year-blood-war": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Amazon|16,00€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-de-toshiro-hitsugaya-en-bankai-absolu-dans-bleach-thousand-year-blood-war": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Amazon|16,00€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-de-kenpachi-zaraki-en-bankai-dans-bleach-thousand-year-blood-war": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Amazon|16,00€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-de-jugram-haschwalth-dans-bleach-thousand-year-blood-war": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Amazon|16,00€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-premium-de-yoruichi-shihoin-dans-bleach-thousand-year-blood-war": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Amazon|18,00€"
+    ],
+    "dispo_import": []
   }
 }
