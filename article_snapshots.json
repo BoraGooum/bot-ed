@@ -1328,5 +1328,39 @@
       "Micromania|159,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/xbox-star-wars-galactic-racer-edition-deluxe": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Micromania|159,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/ps5-star-wars-galactic-racer-edition-deluxe": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|79,99€",
+      "Cdiscount|79,99€",
+      "Cultura|79,99€",
+      "Fnac|79,99€",
+      "Leclerc|80€",
+      "Micromania|79,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-galactic-racer-edition-standard-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|44,99€",
+      "Auchan|44,99€",
+      "Carrefour|59,99€",
+      "Cdiscount|44,99€",
+      "Cultura|59,99€",
+      "Fnac|49,99€",
+      "Leclerc|59,99€",
+      "Micromania|59,99€",
+      "en précommande à|45€"
+    ],
+    "dispo_import": []
   }
 }
