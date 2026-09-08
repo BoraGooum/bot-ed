@@ -1138,5 +1138,36 @@
       "PlayStation Direct|74,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/manette-xbox-x25-edition-speciale-25e-anniversaire": {
+    "univers": "Accessoires",
+    "dispo_fr": [
+      "Amazon|79,99€",
+      "Cultura|79,99€",
+      "Fnac|79,99€",
+      "Micromania|79,99€",
+      "Microsoft|79,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/marvel-omnibus-ultimate-fantastic-four-tome-2-edition-collector-comics": {
+    "univers": "Comics",
+    "dispo_fr": [
+      "Panini|80,00€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/marvel-omnibus-ultimate-fantastic-four-tome-2-edition-standard-comics": {
+    "univers": "Comics",
+    "dispo_fr": [
+      "Amazon|80€",
+      "Cultura|80€",
+      "Fnac|80€",
+      "Leclerc|80€"
+    ],
+    "dispo_import": [
+      "Amazon.be|80€",
+      "Fnac.be|80,40€"
+    ]
   }
 }
