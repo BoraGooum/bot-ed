@@ -1252,5 +1252,20 @@
       "Micromania|109,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/teenage-mutant-ninja-turtles-arcade-wrath-of-the-mutants-ninja-edition-switch-2": {
+    "univers": "Édition limitée",
+    "dispo_fr": [
+      "Fnac|34,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/culdcept-begins-edition-collector-switch-2": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Cdiscount|54,42€",
+      "Micromania|79,99€"
+    ],
+    "dispo_import": []
   }
 }
