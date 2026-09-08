@@ -1169,5 +1169,35 @@
       "Amazon.be|80€",
       "Fnac.be|80,40€"
     ]
+  },
+  "https://editioncollector.fr/collectors/hot-wheels-infinite-rush-edition-day-one-ps5": {
+    "univers": "day one",
+    "dispo_fr": [
+      "Amazon|36,99€",
+      "Auchan|39,99€",
+      "Carrefour|49,99€",
+      "Cdiscount|36,99€",
+      "Cultura|49,99€",
+      "Fnac|49,99€",
+      "Leclerc|39,99€",
+      "Micromania|49,99€",
+      "en précommande à|37€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/hot-wheels-infinite-rush-edition-standard-switch-2": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|39,99€",
+      "Auchan|39,99€",
+      "Carrefour|49,99€",
+      "Cdiscount|49,99€",
+      "Cultura|49,99€",
+      "Fnac|49,99€",
+      "Leclerc|39,99€",
+      "Micromania|49,99€",
+      "en précommande à|40€"
+    ],
+    "dispo_import": []
   }
 }
