@@ -956,5 +956,23 @@
     "univers": "Steelbook",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/demon-slayer-tome-1-edition-speciale-variant-gold-manga": {
+    "univers": "Manga",
+    "dispo_fr": [
+      "Amazon|8,29€",
+      "Cultura|8,29€",
+      "Fnac|8,29€",
+      "Leclerc|8,29€"
+    ],
+    "dispo_import": [
+      "Amazon.be|8,29€",
+      "Fnac.be|8,29€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/michael-coffret-steelbook-edition-limitee-blu-ray-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [],
+    "dispo_import": []
   }
 }
