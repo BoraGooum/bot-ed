@@ -1202,16 +1202,21 @@
   },
   "https://editioncollector.fr/collectors/dispatch-edition-deluxe-steelbook-ps5": {
     "univers": "Steelbook",
-    "dispo_fr": [],
-    "dispo_import": [
-      "Panax Store|59,99$"
-    ]
+    "dispo_fr": [
+      "Panax Store|59,99€"
+    ],
+    "dispo_import": []
   },
   "https://editioncollector.fr/collectors/dispatch-edition-deluxe-steelbook-switch-2": {
     "univers": "Steelbook",
+    "dispo_fr": [
+      "Panax Store|59,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/link-epona-lego-zelda-ocarina-of-time": {
+    "univers": "LEGO",
     "dispo_fr": [],
-    "dispo_import": [
-      "Panax Store|59,99$"
-    ]
+    "dispo_import": []
   }
 }
