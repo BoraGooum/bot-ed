@@ -95,10 +95,21 @@ def log_pointeuse():
         print(f"⚠️ Erreur écriture pointeuse : {exc}")
 
 
-def fetch(url: str) -> BeautifulSoup:
-    resp = requests.get(url, headers=HEADERS, timeout=20)
-    resp.raise_for_status()
-    return BeautifulSoup(resp.text, "html.parser")
+def fetch(url: str, retries: int = 2) -> BeautifulSoup:
+    """Récupère et parse une page, avec quelques tentatives en cas d'erreur
+    réseau ou serveur passagère (ex. 500 côté editioncollector.fr)."""
+    last_exc = None
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=20)
+            resp.raise_for_status()
+            return BeautifulSoup(resp.text, "html.parser")
+        except requests.exceptions.RequestException as exc:
+            last_exc = exc
+            if attempt < retries:
+                print(f"⚠️ Erreur sur {url} ({exc}), nouvelle tentative dans 5s...")
+                time.sleep(5)
+    raise last_exc
 
 
 def normalize_href(href: str, prefix: str) -> str | None:
@@ -358,16 +369,31 @@ def detect_merchants(soup: BeautifulSoup) -> tuple[list[dict], list[dict]]:
     return dispo_fr, dispo_import
 
 
+def fetch_with_text(url: str, retries: int = 2) -> tuple[BeautifulSoup, str]:
+    """Comme fetch(), mais retourne aussi le texte brut (utile pour les
+    regex sur le HTML source, ex. extraction d'image S3)."""
+    last_exc = None
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=20)
+            resp.raise_for_status()
+            return BeautifulSoup(resp.text, "html.parser"), resp.text
+        except requests.exceptions.RequestException as exc:
+            last_exc = exc
+            if attempt < retries:
+                print(f"⚠️ Erreur sur {url} ({exc}), nouvelle tentative dans 5s...")
+                time.sleep(5)
+    raise last_exc
+
+
 def parse_article(url: str) -> dict:
     """Extrait titre, image, type (univers) et disponibilités FR/import d'une fiche."""
-    resp = requests.get(url, headers=HEADERS, timeout=20)
-    resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
+    soup, resp_text = fetch_with_text(url)
 
     title_tag = soup.find("meta", property="og:title")
     title = title_tag["content"].strip() if title_tag else (soup.title.get_text(strip=True) if soup.title else "Article")
 
-    image_url = extract_image(soup, resp.text)
+    image_url = extract_image(soup, resp_text)
 
     page_text = soup.get_text("\n", strip=True)
     univers = extract_category(page_text)
@@ -393,6 +419,66 @@ def parse_article(url: str) -> dict:
 def format_merchant_line(entry: dict) -> str:
     link = f'<a href="{entry["url"]}">{escape_html(entry["name"])}</a>'
     return f"- {link} {entry['price']}" if entry["price"] else f"- {link}"
+
+
+# --------------------------------------------------------------------------
+# Regroupement des fiches qui ne diffèrent que par une variante en fin de
+# titre entre parenthèses : "Titre (PS5)" / "Titre (Switch)" / "Titre
+# (Steelbook)"... -> un seul message avec une section "Versions".
+# --------------------------------------------------------------------------
+
+TITLE_VARIANT_PATTERN = re.compile(r"^(.*?)\s*\(([^()]+)\)\s*$")
+
+
+def split_title_variant(title: str) -> tuple[str, str | None]:
+    m = TITLE_VARIANT_PATTERN.match(title)
+    if m:
+        return m.group(1).strip(), m.group(2).strip()
+    return title.strip(), None
+
+
+def group_articles_by_base_title(articles: list[dict]) -> list[list[dict]]:
+    """Regroupe une liste d'articles (fraîchement parsés) par titre commun.
+    Conserve l'ordre d'apparition des groupes."""
+    groups: dict[str, list[dict]] = {}
+    order: list[str] = []
+    for article in articles:
+        base_title, variant = split_title_variant(article["title"])
+        article["_base_title"] = base_title
+        article["_variant"] = variant
+        key = base_title.lower()
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(article)
+    return [groups[key] for key in order]
+
+
+def format_variant_line(article: dict) -> str:
+    all_dispo = article["dispo_fr"] + article["dispo_import"]
+    price_part = ", ".join(f"{e['name']} {e['price']}" for e in all_dispo) if all_dispo else "bientôt ?"
+    label = article["_variant"] or article["title"]
+    return f"- <a href=\"{article['url']}\">{escape_html(label)}</a> : {price_part}"
+
+
+def format_grouped_article_message(group: list[dict]) -> str:
+    base_title = group[0]["_base_title"]
+    univers = group[0]["univers"]
+
+    lines = [f"🆕 • <b>{escape_html(base_title)}</b>", ""]
+    if univers:
+        lines.append(f"• Type : {escape_html(univers)}")
+        lines.append("")
+
+    lines.append("• Versions :")
+    lines.extend(format_variant_line(a) for a in group)
+
+    hashtag = build_hashtag(univers)
+    if hashtag:
+        lines.append("")
+        lines.append(hashtag)
+
+    return "\n".join(lines)
 
 
 def format_article_message(article: dict, updated: bool = False) -> str:
@@ -516,14 +602,30 @@ def check_collectors() -> bool:
         print("[collectors] Aucun nouvel article.")
         return False
 
+    # On parse d'abord TOUS les nouveaux articles avant d'envoyer quoi que ce
+    # soit, pour pouvoir regrouper ceux qui ne diffèrent que par une variante
+    # de fin de titre ("Titre (PS5)" / "Titre (Switch)"...).
+    parsed_articles = []
     for url in reversed(new_links):  # du plus ancien au plus récent
         try:
-            article = parse_article(url)
-            send_telegram_message(format_article_message(article), article["image"], silent=True)
-            print(f"✅ [collectors] Notifié : {article['title']}")
-            time.sleep(1)
+            parsed_articles.append(parse_article(url))
         except Exception as exc:  # noqa: BLE001
             print(f"❌ [collectors] Erreur sur {url}: {exc}")
+
+    for group in group_articles_by_base_title(parsed_articles):
+        try:
+            if len(group) == 1:
+                article = group[0]
+                send_telegram_message(format_article_message(article), article["image"], silent=True)
+                print(f"✅ [collectors] Notifié : {article['title']}")
+            else:
+                message = format_grouped_article_message(group)
+                cover_image = group[0]["image"]
+                send_telegram_message(message, cover_image, silent=True)
+                print(f"✅ [collectors] Notifié (groupé x{len(group)}) : {group[0]['_base_title']}")
+            time.sleep(1)
+        except Exception as exc:  # noqa: BLE001
+            print(f"❌ [collectors] Erreur à l'envoi du groupe : {exc}")
 
     updated = latest_links + [u for u in seen if u not in latest_links]
     save_seen(SEEN_FILE, updated)
@@ -695,14 +797,25 @@ def check_bons_plans() -> bool:
     return True
 
 
+def safe_run(label: str, func, default=False):
+    """Exécute func() en isolant les erreurs : si ça plante (ex. site
+    temporairement en panne), on logue et on continue avec les autres
+    étapes au lieu de faire échouer tout le run GitHub Actions."""
+    try:
+        return func()
+    except Exception as exc:  # noqa: BLE001
+        print(f"❌ [{label}] Échec de cette étape (ignorée pour ce cycle) : {exc}")
+        return default
+
+
 def main():
     log_pointeuse()
 
-    found_collectors = check_collectors()
-    found_updates = check_article_updates()
-    found_promos = check_bons_plans()
+    found_collectors = safe_run("collectors", check_collectors)
+    found_updates = safe_run("maj", check_article_updates)
+    found_promos = safe_run("bons-plans", check_bons_plans)
 
-    manage_heartbeat_gif(found_new=found_collectors or found_updates or found_promos)
+    safe_run("heartbeat", lambda: manage_heartbeat_gif(found_new=found_collectors or found_updates or found_promos))
 
 
 if __name__ == "__main__":
