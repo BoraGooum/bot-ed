@@ -89,7 +89,8 @@
     "dispo_fr": [
       "Auchan|499,99€",
       "Carrefour|541,90€",
-      "Cdiscount|519,99€"
+      "Cdiscount|519,99€",
+      "Cultura|469,99€"
     ],
     "dispo_import": []
   },
@@ -97,7 +98,8 @@
     "univers": "Manettes",
     "dispo_fr": [
       "Carrefour|109,99€",
-      "Cdiscount|99,99€"
+      "Cdiscount|99,99€",
+      "Cultura|79,99€"
     ],
     "dispo_import": []
   },
@@ -1318,6 +1320,13 @@
   "https://editioncollector.fr/collectors/mouse-p-i-for-hire-artbook-officiel": {
     "univers": "Artbook",
     "dispo_fr": [],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/star-wars-galactic-racer": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Micromania|159,99€"
+    ],
     "dispo_import": []
   }
 }
