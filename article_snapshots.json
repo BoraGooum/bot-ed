@@ -104,12 +104,16 @@
   "https://editioncollector.fr/collectors/manette-pro-nintendo-switch-2-the-legend-of-zelda-edition-limitee-40e-anniversaire": {
     "univers": "Manettes",
     "dispo_fr": [
-      "Carrefour|109,99€",
+      "Carrefour|108€",
       "Cdiscount|99,99€",
       "Cultura|79,99€",
-      "Fnac|99,99€"
+      "Fnac|99,99€",
+      "Joybuy|99,99€",
+      "Leclerc|89€"
     ],
-    "dispo_import": []
+    "dispo_import": [
+      "Fnac.be|99,95€"
+    ]
   },
   "https://editioncollector.fr/collectors/cyberpunk-2077-no-coincidence-edition-collector-roman": {
     "univers": "Roman",
