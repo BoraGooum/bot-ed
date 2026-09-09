@@ -1596,5 +1596,27 @@
       "Amazon.fr|54,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/lego-harry-potter-collection-switch-2": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|49,99€",
+      "Cultura|49,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/gear-club-unlimited-3-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|39,17€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/gear-club-unlimited-3-xbox": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|36€"
+    ],
+    "dispo_import": []
   }
 }
