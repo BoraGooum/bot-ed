@@ -988,7 +988,9 @@
   },
   "https://editioncollector.fr/collectors/star-trek-coffret-6-steelbooks-des-films-1-a-6-blu-ray-4k": {
     "univers": "Steelbook",
-    "dispo_fr": [],
+    "dispo_fr": [
+      "Fnac|229,99€"
+    ],
     "dispo_import": []
   },
   "https://editioncollector.fr/collectors/demon-slayer-tome-1-edition-speciale-variant-gold-manga": {
@@ -1408,5 +1410,18 @@
       "en précommande à|45€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/projet-derniere-chance-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|34,99€",
+      "Cultura|34,99€",
+      "Fnac|34,99€",
+      "Leclerc|34,99€",
+      "en précommande à|31€"
+    ],
+    "dispo_import": [
+      "Fnac.be|34,99€"
+    ]
   }
 }
