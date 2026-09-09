@@ -1478,5 +1478,44 @@
       "Micromania|34,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/fast-and-furious-steelbook-4k-edition-25eme-anniversaire": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cultura|29,99€",
+      "Fnac|29,99€",
+      "Leclerc|29,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|29,99€",
+      "Zavvi.fr|39,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/barbare-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cultura|29,99€",
+      "Fnac|29,99€",
+      "Leclerc|29,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|29,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/pour-une-poignee-de-dollars-steelbook-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cultura|29,99€",
+      "Fnac|34,99€",
+      "Leclerc|29,99€",
+      "en précommande à|31€"
+    ],
+    "dispo_import": [
+      "Amazon.be|29,99€",
+      "Fnac.be|34,99€"
+    ]
   }
 }
