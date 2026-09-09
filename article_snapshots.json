@@ -1280,7 +1280,9 @@
   },
   "https://editioncollector.fr/collectors/manette-pro-nintendo-switch-2-the-legend-of-zelda-support-d-exposition-edition-limitee-40e-anniversaire": {
     "univers": "Manettes",
-    "dispo_fr": [],
+    "dispo_fr": [
+      "Nintendo Store|109,99€"
+    ],
     "dispo_import": []
   },
   "https://editioncollector.fr/collectors/ace-combat-8-wings-of-theve-edition-deluxe-ps5": {
@@ -1536,5 +1538,18 @@
       "Leclerc|24,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/la-fin-d-oak-street-steelbook-blu-ray-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|34,99€",
+      "Cultura|29,99€",
+      "Fnac|34,99€",
+      "Leclerc|34,99€",
+      "en précommande à|30€"
+    ],
+    "dispo_import": [
+      "Fnac.be|34,99€"
+    ]
   }
 }
