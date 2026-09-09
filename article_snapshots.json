@@ -1517,5 +1517,14 @@
       "Amazon.be|29,99€",
       "Fnac.be|34,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/le-cercle-des-poetes-disparus-1989-blu-ray-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|27,04€",
+      "Fnac|29,99€",
+      "Leclerc|29,99€"
+    ],
+    "dispo_import": []
   }
 }
