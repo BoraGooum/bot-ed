@@ -532,6 +532,7 @@
   "https://editioncollector.fr/collectors/la-librairie-book-nook-lego-icons": {
     "univers": "LEGO",
     "dispo_fr": [
+      "Amazon|129,99€",
       "boutique LEGO|129,99€"
     ],
     "dispo_import": []
@@ -1444,6 +1445,36 @@
     "dispo_fr": [
       "Amazon|20€",
       "Micromania|19,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/pour-une-poignee-de-dollars-edition-collector-steelbook": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Fnac|54,99€"
+    ],
+    "dispo_import": [
+      "Fnac.be|54,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/barbarian-saga-the-beastmaster-ps5": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cdiscount|29,99€",
+      "Cultura|29,99€",
+      "Leclerc|29,99€",
+      "Micromania|29,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/barbarian-saga-the-beastmaster-switch": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|34,70€",
+      "Cultura|34,99€",
+      "Leclerc|34,70€",
+      "Micromania|34,99€"
     ],
     "dispo_import": []
   }
