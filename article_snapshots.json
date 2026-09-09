@@ -1563,5 +1563,38 @@
     "dispo_import": [
       "Fnac.be|29,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/house-of-the-dragon-saison-3-steelbook-edition-limitee-blu-ray-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon|59,99€",
+      "Cultura|54,99€",
+      "Fnac|59,99€",
+      "Leclerc|59,99€",
+      "en précommande à|55€"
+    ],
+    "dispo_import": [
+      "Fnac.be|59,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/house-of-the-dragon-saison-3-blu-ray-4k": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|49,99€",
+      "Cultura|44,99€",
+      "Fnac|49,99€",
+      "Leclerc|59,99€",
+      "en précommande à|45€"
+    ],
+    "dispo_import": [
+      "Fnac.be|59,99€"
+    ]
+  },
+  "https://editioncollector.fr/collectors/metaphor-refantazio-edition-standard-switch-2": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Amazon.fr|54,99€"
+    ],
+    "dispo_import": []
   }
 }
