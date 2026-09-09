@@ -77,6 +77,7 @@
   "https://editioncollector.fr/collectors/the-legend-of-zelda-ocarina-of-time-remake-2026": {
     "univers": "Édition collector",
     "dispo_fr": [
+      "Amazon|59,99€",
       "Auchan|51,99€",
       "Carrefour|54,99€",
       "Cdiscount|59,99€",
@@ -85,7 +86,7 @@
       "Joybuy|59,99€",
       "Leclerc|51,49€",
       "Micromania|69,99€",
-      "en précommande à|55€"
+      "en précommande à|60€"
     ],
     "dispo_import": []
   },
@@ -1645,6 +1646,20 @@
     "univers": "Merch",
     "dispo_fr": [
       "Amazon|26,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/jcc-pokemon-30e-anniversaire-collection-poster": {
+    "univers": "Merch",
+    "dispo_fr": [
+      "Amazon|25,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/jcc-pokemon-30e-anniversaire-blister-2-boosters-evoli": {
+    "univers": "Merch",
+    "dispo_fr": [
+      "Amazon|13,99€"
     ],
     "dispo_import": []
   }
