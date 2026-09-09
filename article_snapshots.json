@@ -1438,5 +1438,13 @@
     "univers": "Goodies",
     "dispo_fr": [],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/figurine-funko-pop-de-jason-voorhees-dans-vendredi-13": {
+    "univers": "Funko Pop",
+    "dispo_fr": [
+      "Amazon|20€",
+      "Micromania|19,99€"
+    ],
+    "dispo_import": []
   }
 }
