@@ -1618,5 +1618,13 @@
       "Amazon|36€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/pokemon-coffret-dresseur-d-elite-30eme-anniversaire": {
+    "univers": "Merch",
+    "dispo_fr": [
+      "Amazon|54,99€",
+      "Micromania|55,99€"
+    ],
+    "dispo_import": []
   }
 }
