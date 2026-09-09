@@ -1426,5 +1426,12 @@
     "dispo_import": [
       "Fnac.be|34,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/les-ensorceleuses-2-steelbook-blu-ray-4k": {
+    "univers": "Steelbook",
+    "dispo_fr": [
+      "Fnac|34,99€"
+    ],
+    "dispo_import": []
   }
 }
