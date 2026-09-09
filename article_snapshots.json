@@ -1551,5 +1551,17 @@
     "dispo_import": [
       "Fnac.be|34,99€"
     ]
+  },
+  "https://editioncollector.fr/collectors/la-fin-d-oak-street-blu-ray-4k": {
+    "univers": "Standard",
+    "dispo_fr": [
+      "Amazon|29,99€",
+      "Cultura|29,99€",
+      "Fnac|29,99€",
+      "Leclerc|30,03€"
+    ],
+    "dispo_import": [
+      "Fnac.be|29,99€"
+    ]
   }
 }
