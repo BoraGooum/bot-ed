@@ -1626,5 +1626,26 @@
       "Micromania|55,99€"
     ],
     "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/jcc-pokemon-30e-anniversaire-boite-amphinobi-ex": {
+    "univers": "Merch",
+    "dispo_fr": [
+      "Amazon|26,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/jcc-pokemon-30e-anniversaire-boite-nymphali-ex": {
+    "univers": "Merch",
+    "dispo_fr": [
+      "Amazon|26,99€"
+    ],
+    "dispo_import": []
+  },
+  "https://editioncollector.fr/collectors/jcc-pokemon-30e-anniversaire-coffret-amphinobi-ex": {
+    "univers": "Merch",
+    "dispo_fr": [
+      "Amazon|26,99€"
+    ],
+    "dispo_import": []
   }
 }
